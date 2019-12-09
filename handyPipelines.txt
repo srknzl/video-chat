@@ -18,15 +18,15 @@ gst-launch-1.0 udpsrc multicast-group=234.4.4.4 auto-multicast=true port=1234 ! 
 
 
 
-Low Delay Video
+Low Delay Video Streaming
 --
-gst-launch-1.0 v4l2src -vv ! queue ! videoconvert ! queue ! x264enc bitrate=500 speed-preset=superfast tune=zerolatency  ! queue  ! rtph264pay ! queue ! udpsink host=234.4.4.4 port=1234 
+gst-launch-1.0 v4l2src ! queue ! videoconvert ! queue ! x264enc bitrate=500 speed-preset=superfast tune=zerolatency  ! queue  ! rtph264pay ! queue ! udpsink host=234.4.4.4 port=1234 
 
 gst-launch-1.0 udpsrc address=234.4.4.4 port=1234 caps="application/x-rtp, media=(string)video, clock-rate=(int)90000, payload=(int)96, encoding-name=(string)H264" ! queue ! rtph264depay ! queue ! avdec_h264 ! queue ! videoconvert ! queue ! xvimagesink
 
 
-Low Delay Audio
+Low Delay Audio Streaming
 --
-gst-launch-1.0 -v autoaudiosrc ! audioconvert ! rtpL24pay ! udpsink host5=234.4.4.4  port=1235
+gst-launch-1.0 -v autoaudiosrc ! audioconvert ! rtpL24pay ! udpsink host=234.4.4.4  port=1235
 
 gst-launch-1.0 -v udpsrc address=234.4.4.4 port=1235 caps="application/x-rtp,channels=(int)2,format=(string)S16LE,media=(string)audio,payload=(int)96,clock-rate=(int)44100,encoding-name=(string)L24" ! rtpL24depay ! audioconvert ! autoaudiosink sync=false
