@@ -1,3 +1,5 @@
 x264enc not found: 
 sudo apt-get install gstreamer1.0-plugins-ugly
 
+avdev_h264 no element: 
+sudo apt install gstreamer1.0-libav
