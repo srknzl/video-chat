@@ -55,18 +55,15 @@ class LabelWindow(Gtk.Window):
         vbox_right.pack_start(label, True, True, 0)
 
         label = Gtk.Label()
-        label.set_markup("Text can be <small>small</small>, <big>big</big>, "
-                         "<b>bold</b>, <i>italic</i> and even point to "
-                         "somewhere in the <a href=\"http://www.gtk.org\" "
-                         "title=\"Click to find out more\">internets</a>.")
-        label.set_line_wrap(True)
+        label.set_markup("<span size=\"20\">Blue text</span> is <i>cool</i>!")
+        # label.set_line_wrap(True)
         vbox_left.pack_start(label, True, True, 0)
 
         label = Gtk.Label.new_with_mnemonic(
             "_Press Alt + P to select button to the right")
         vbox_left.pack_start(label, True, True, 0)
         label.set_selectable(True)
-
+        
         button = Gtk.Button(label="Click at your own risk")
         label.set_mnemonic_widget(button)
         vbox_right.pack_start(button, True, True, 0)
