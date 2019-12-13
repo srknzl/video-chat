@@ -78,7 +78,6 @@ def send_message(_ip, _payload):
 
 
 def process_messages(_data):
-    time.sleep(0.1) # Dont know why but necessary for correct working 
     decoded = _data.decode("utf-8", errors="replace")
     if decoded[0] == "[" and decoded[-1] == "]":
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
@@ -93,19 +92,6 @@ def process_messages(_data):
             lastname = last_udp_packet["name"]
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            # print("Last time:", time.time()-lasttime)
-            # print("Last ip", lastip, "Ip", ip)
-            # print("Last name", lastname, "Name", name)
-
-            # print("(name, ip) != (username, userip)",
-            #        (name, ip) != (username, userip))
-            # print("(name, ip)",(name, ip))
-            # print("(username, userip)",(username, userip))
-            # print("(name, ip) not in online_people",
-            #       (name, ip) not in online_people)
-            # print("(name, ip) not in online_people and (name, ip) != (username, userip)",
-            #       (name, ip) not in online_people and (name, ip) != (username, userip))
-
             if(time.time()-lasttime <= 3 and lastip == ip and lastname == name):
                 pass
             # not me and also not in online list
@@ -120,6 +106,7 @@ def process_messages(_data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             if (name, ip) not in online_people:
+                time.sleep(0.1)
                 print("New online person:", name, ip)
                 online_people.add((name, ip))
                 
