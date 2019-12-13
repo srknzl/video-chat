@@ -172,6 +172,7 @@ last_udp_packet = {
 
 lasttime = 0.0
 messages = {}
+sent_messages = {}
 online_people = set()
 username = input("What is your name? \n")
 userip = get_ip()
@@ -210,24 +211,54 @@ while choice != "4":
             continue
         temp_dict = {}
         counter = 1
+        print("Online people: \n\n")
         for person in online_people:
             print(str(counter) + ". Name: " +
                   str(person[0]) + " IP: " + str(person[1]))
             temp_dict[counter] = person
             counter += 1
+        
+        print()
         person_num = input(
-            "Enter a number corresponding to a person given above (To cancel enter cancel): \n")
+            "Select a person by number. \nTo cancel, type 'c' \n")
         while not person_num.isdigit() or int(person_num) > (counter - 1) or int(person_num) < 1:
-            if person_num == "cancel":
+            if person_num == "c":
                 break
-            person_num = input("Invalid. Please enter again: \n")
-        if person_num == "cancel":
+            person_num = input("Invalid person number. Please enter again: \n")
+        if person_num == "c":
             continue
         person_cho = temp_dict[int(person_num)]
         person_ip = person_cho[1]
+    
+        if person_cho in sent_messages:
+            print("You wrote before: ")
+            for message in sent_messages[person_cho]:
+                print(">> " + str(message))
+
         message = input("Please enter your message:\n")
+        if person_cho in sent_messages:
+            sent_messages[person_cho].append(message)
+        else:
+            sent_messages[person_cho] = [message]
         executor.submit(send_message, person_ip, message)
-        flash_messages.append("Message on the way! \n")
+        print("Message sent! \n")
+        
+        while True:
+            sendAgain = input("Send again ? [y/n]:")
+            while sendAgain.capitalize() != "Y" and sendAgain.capitalize() != "N":
+                print("Invalid answer, try again.")
+                sendAgain = input("Send again ? [y/n]:")
+            if sendAgain.capitalize() == "Y":
+                message = input("Please enter your message:\n")
+                if person_cho in sent_messages:
+                    sent_messages[person_cho].append(message)
+                else:
+                    sent_messages[person_cho] = [message]
+                executor.submit(send_message, person_ip, message)
+                print("Message sent! \n")
+            elif sendAgain.capitalize() == "N":
+                break
+        
     elif choice == "2":  # Mailbox
         clear()
         if len(messages.keys()) == 0:
