@@ -3,7 +3,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from os import system, name
 import time
-transporter = """
+transporterLogo = """
  _____                                      _            
 /__   \_ __ __ _ _ __  ___ _ __   ___  _ __| |_ ___ _ __ 
   / /\/ '__/ _` | '_ \/ __| '_ \ / _ \| '__| __/ _ \ '__|
@@ -14,14 +14,10 @@ transporter = """
 
 
 def clear():
-    pass
-    # for windows
-    if name == 'nt':
-        _ = system('cls')
-
-        # for mac and linux
-    else:
-        _ = system('clear')
+    if name == 'nt':  # for windows
+        system('cls')
+    else:  # for mac and linux
+        system('clear')
 
 
 def print_options():
@@ -32,16 +28,14 @@ def print_options():
 
 
 def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except:
-        IP = '127.0.0.1'
-        print("You are not connected to a network chat application will now work.")
-    finally:
-        s.close()
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except:
+            IP = '127.0.0.1'
+            print("You are not connected to a network chat application will not work.")
     return IP
 
 
@@ -58,9 +52,9 @@ def send_announce():
         send_announce_packet_once(announce_s)
 
 
-def send_announce_packet_once(announce_socket):
+def send_announce_packet_once(_announce_socket):
     try:
-        announce_socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
+        _announce_socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except TimeoutError:
         pass
@@ -74,7 +68,6 @@ def send_response(_ip, _name):  # _ip is ip of other guy
                             ", response]").encode("utf-8", errors="replace"))
         response_s.shutdown(socket.SHUT_RDWR)
 
-
 def send_message(_ip, _payload):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
         message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -85,56 +78,74 @@ def send_message(_ip, _payload):
 
 
 def process_messages(_data):
-    decode = _data.decode("utf-8", errors="replace")
-    if decode[0] == "[" and decode[-1] == "]":
-        decode_strip = str(decode[1:-1])  # Strip out square parantheses.
-        decode_split = decode_strip.split(",")
+    time.sleep(0.1) # Dont know why but necessary for correct working 
+    decoded = _data.decode("utf-8", errors="replace")
+    if decoded[0] == "[" and decoded[-1] == "]":
+        decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
+        decoded_splitted = decoded_striped.split(",")
+        if len(decoded_splitted) < 3:
+            print("Got an invalid message " + str(decode))
+            return
+        message_type = decoded_splitted[2].strip(' ')
+        if message_type == 'announce':
+            global lasttime, last_udp_packet
+            lastip = last_udp_packet["ip"]
+            lastname = last_udp_packet["name"]
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            # print("Last time:", time.time()-lasttime)
+            # print("Last ip", lastip, "Ip", ip)
+            # print("Last name", lastname, "Name", name)
 
-        if len(decode_split) == 3:
-            message_type = decode_split[2].strip(' ')
-            if message_type == 'announce':
-                global lasttime, last_udp_packet
-                lastip = last_udp_packet["ip"]
-                lastname = last_udp_packet["name"]
-                name = decode_split[0].strip(' ')
-                ip = decode_split[1].strip(' ')
-                if(time.time()-lasttime <= 3 and lastip == ip and lastname == name):
-                    pass
-                else:
-                    online_people.add((name, ip))
-                    print(str(name) + " is online!")
-                    executor.submit(send_response, ip, name)
-                lasttime = time.time()
-                last_udp_packet["ip"] = ip
-                last_udp_packet["name"] = name
-            elif message_type == 'response':
-                name = decode_split[0].strip(' ')
-                ip = decode_split[1].strip(' ')
-                print(str(name) + " is online!")
+            # print("(name, ip) != (username, userip)",
+            #        (name, ip) != (username, userip))
+            # print("(name, ip)",(name, ip))
+            # print("(username, userip)",(username, userip))
+            # print("(name, ip) not in online_people",
+            #       (name, ip) not in online_people)
+            # print("(name, ip) not in online_people and (name, ip) != (username, userip)",
+            #       (name, ip) not in online_people and (name, ip) != (username, userip))
+
+            if(time.time()-lasttime <= 3 and lastip == ip and lastname == name):
+                pass
+            # not me and also not in online list
+            elif (name, ip) not in online_people and (name, ip) != (username, userip):
                 online_people.add((name, ip))
-            else:
-                print("Got an invalid message " + str(decode))
-        elif len(decode_split) == 4:
-            message_type = decode_split[2].strip(' ')
-            if message_type == 'message':
-                name = decode_split[0].strip(' ')
-                ip = decode_split[1].strip(' ')
-                message = decode_split[3].strip(' ')
-                print(str(name) + ": " + str(message))
-                if (name, ip) in messages:
-                    messages[(name, ip)].append(message)
-                else:
-                    messages[(name, ip)] = [message]
+                print("New online person:", name, ip)
+                executor.submit(send_response, ip, name)
+            lasttime = time.time()
+            last_udp_packet["ip"] = ip
+            last_udp_packet["name"] = name
+        elif message_type == 'response':
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            if (name, ip) not in online_people:
+                print("New online person:", name, ip)
                 online_people.add((name, ip))
-            else:
+                
+        elif message_type == 'message':
+            if len(decoded_splitted) < 4:
                 print("Got an invalid message " + str(decode))
+                return
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            message = decoded_splitted[3].strip(' ')
+            print(str(name) + ": " + str(message))
+            if (name, ip) in messages:
+                messages[(name, ip)].append(message)
+            else:
+                messages[(name, ip)] = [message]
+            if (name, ip) not in online_people:
+                print("New online person:", name, ip)
+                online_people.add((name, ip))
+        else:
+            print("Got an invalid message " + str(decode))
 
     else:  # Invalid message
         print("Got an invalid message " + str(decode))
 
 
 def listen_messages():
-    time.sleep(1)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((get_ip(), 12345))
@@ -145,7 +156,6 @@ def listen_messages():
 
 
 def listen_udp_messages():
-    time.sleep(1)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -158,16 +168,13 @@ def listen_udp_messages():
 
 def on_new_connection(conn, addr):
     with conn:
-        # time.sleep(2)  # Wait for message
         data = conn.recv(1500)
         if data:
             process_messages(data)
 
 
 def on_new_udp_connection(data, addr):
-    if addr == (get_ip(), 12345):
-        print("This is me")
-    else:
+    if addr != (userip, 12345):
         process_messages(data)
 
 
@@ -203,7 +210,7 @@ choice = None
 flash_messages = ["Welcome to the transporter app. Have fun! \n"]
 while choice != "4":
     clear()
-    print(transporter)
+    print(transporterLogo)
     for f_message in flash_messages:
         print(f_message)
     flash_messages.clear()
