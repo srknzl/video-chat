@@ -343,13 +343,13 @@ while choice != "5":
             ["bash", "streamVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
         streamAudioProcess = subprocess.Popen(
             ["bash", "streamAudio.sh", own_ip, "50000"], stdout=subprocess.DEVNULL)
-        ownVideoProcess = subprocess.Popen(
+        renderOwnVideoProcess = subprocess.Popen(
             ["bash", "renderVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
+        renderVideoProcess = subprocess.Popen(
+            ["bash", "renderVideo.sh", friend_ip, "40000"], stdout=subprocess.DEVNULL)
+        renderAudioProcess = subprocess.Popen(
+            ["bash", "renderAudio.sh", friend_ip, "50000"], stdout=subprocess.DEVNULL)
         print("Video chat started...")
-        renderVideoProcess = subprocess.Popen(["bash", "renderVideo.sh", friend_ip,
-                                               "40000"], stdout=subprocess.DEVNULL)
-        renderAudioProcess = subprocess.Popen(["bash", "renderAudio.sh", friend_ip,
-                                               "50000"], stdout=subprocess.DEVNULL)
 
         inp = input("Press c to close video chat")
         while inp != "c":
