@@ -70,10 +70,10 @@ def send_response(_ip):  # _ip is ip of other guy
             response_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             response_s.connect((_ip, 12345))
             response_s.sendall(("[" + str(username) + ", " + str(userip) +
-                                ", response]").encode("utf-8", errors="replace"))
+                               ", response]").encode("utf-8", errors="replace"))
             response_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
-            print("An error occured when message", e)
+            print("An error occured when responding to an announce message", e)
             time.sleep(1)
 
 
@@ -86,7 +86,7 @@ def send_message(_ip, _payload):
                 ("[" + str(username) + ", " + str(userip) + ", message, " + str(_payload) + "]").encode("utf-8", errors="replace"))
             message_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
-            print("An error occured when message", e)
+            print("An error occured when message is sending", e)
             time.sleep(1)
 
 
@@ -162,22 +162,24 @@ def process_messages(_data):
                 pass
             # not me and also not in online list
             elif (name, ip) not in online_people and (name, ip) != (username, userip):
-                online_people.add((name, ip))
-                print("New online person:", name, ip)
-                executor.submit(send_response, ip, name)
+                try:
+                    subprocess.run(["notify-send","New person online: " + name + ", Ip: " + ip])
+                    online_people.add((name, ip))
+                    executor.submit(send_response, ip)
+                except Exception as e:
+                    print(e)
             lasttime = time.time()
             last_udp_packet["ip"] = ip
             last_udp_packet["name"] = name
         elif message_type == 'response':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            if (name, ip) not in online_people:
-                print("New online person:", name, ip)
-                online_people.add((name, ip))
+            subprocess.run(["notify-send","New person online: " + name + ", Ip: " + ip])
+            online_people.add((name, ip))
         elif message_type == 'call':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            print("New call from", name, ".\n", "To accept, go to calls.")
+            subprocess.run(["notify-send","New call from" + name + ".\n" + "To accept, go to calls."])
             if (name, ip) not in calls:
                 calls.append((name, ip))
         elif message_type == 'acceptcall':
@@ -191,11 +193,11 @@ def process_messages(_data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             if ip == accepted_call_ip:
-                start_call = True            
+                start_call = True
         elif message_type == "cancelcall":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            print(name, "canceled a call.")
+            subprocess.run(["notify-send",name + " canceled a call."], shellss)
             try:
                 calls.remove((name, ip))
             except ValueError:
@@ -207,13 +209,15 @@ def process_messages(_data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             message = decoded_splitted[3].strip(' ')
-            print(str(name) + ": " + str(message))
+
+            subprocess.run(["notify-send","New message from " + name + ", Message: " + message])
+            # print(str(name) + ": " + str(message))
             if (name, ip) in messages:
                 messages[(name, ip)].append(message)
             else:
                 messages[(name, ip)] = [message]
             if (name, ip) not in online_people:
-                print("New online person:", name, ip)
+                subprocess.run(["notify-send","New person online: " + name + ", Ip: " + ip])
                 online_people.add((name, ip))
         else:
             print("Got an invalid message " + str(decode))
@@ -247,13 +251,13 @@ def on_new_connection(conn, addr):
     with conn:
         data = conn.recv(1500)
         if data:
-            time.sleep(0.1)
+            # time.sleep(0.1)
             process_messages(data)
 
 
 def on_new_udp_connection(data, addr):
     if addr != (userip, 12345):
-        time.sleep(0.1)
+        # time.sleep(0.1)
         process_messages(data)
 
 
@@ -338,7 +342,7 @@ flash_messages = ["Welcome to the transporter app. Have fun! \n"]
 while choice != "6":
     clear()
     print(transporterLogo)
-    if call_started: 
+    if call_started:
         print("Press c to close video chat")
     for f_message in flash_messages:
         print(f_message)
@@ -506,7 +510,41 @@ while choice != "6":
             print("Video call starting... ")
             executor.submit(start_video_chat, will_be_called_person[1])
         else:
-            flash_messages.append("No respond from other side in 3 seconds.") 
+            flash_messages.append("No respond from other side in 3 seconds.")
+    elif choice == "9":  # ! testing purposes
+        clear()
+        print("------------------Testing------------------ \n\n")
+        if len(online_people) == 0:
+            flash_messages.append("No one is online!\n")
+            continue
+        temp_dict = {}
+        counter = 1
+
+        print("Online people: \n")
+        for person in online_people:
+            print(str(counter) + ". Name: " +
+                  str(person[0]) + " IP: " + str(person[1]))
+            temp_dict[counter] = person
+            counter += 1
+
+        print()
+        person_num = input(
+            "Select a person by number. \nTo cancel, type 'c' \n")
+        while not person_num.isdigit() or int(person_num) > (counter - 1) or int(person_num) < 1:
+            if person_num == "c":
+                break
+            person_num = input("Invalid person number. Please enter again: \n")
+        if person_num == "c":
+            continue
+        person_cho = temp_dict[int(person_num)]
+        person_name = person_cho[0]
+        person_ip = person_cho[1]
+        # todo: Add testing code
+        # executor.submit(send_response,person_ip)
+        # responser = threading.Thread(target=send_response, args=[
+        #                              person_ip], daemon=True)
+        # responser.start()
+
 
     # elif choice == "5":  # Online people
     #     flash_messages.append(threading.active_count())
