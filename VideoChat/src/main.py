@@ -177,7 +177,7 @@ lasttime = 0.0
 messages = {}
 sent_messages = {}
 online_people = set()
-#online_people.add(("serkan","192.168.43.224"))
+# online_people.add(("serkan","192.168.43.224"))
 username = input("What is your name? \n")
 userip = get_ip()
 
@@ -210,12 +210,13 @@ while choice != "5":
     choice = input("Select an option: \n")
     if choice == "1":  # Send message
         clear()
+        print("------------------Send Message------------------ \n\n")
         if len(online_people) == 0:
             flash_messages.append("No one is online!\n")
             continue
         temp_dict = {}
         counter = 1
-        print("Online people: \n\n")
+        print("Online people: \n")
         for person in online_people:
             print(str(counter) + ". Name: " +
                   str(person[0]) + " IP: " + str(person[1]))
@@ -265,6 +266,8 @@ while choice != "5":
 
     elif choice == "2":  # Mailbox
         clear()
+        print("------------------Mailbox------------------ \n\n")
+
         if len(messages.keys()) == 0:
             flash_messages.append("No message! \n")
             continue
@@ -275,12 +278,12 @@ while choice != "5":
                   entry[0] + " IP:" + entry[1])
             temp_dict[counter] = entry
             counter += 1
-        entry_num = input("Select an entry (To cancel enter cancel): \n")
+        entry_num = input("Select an entry.\nTo cancel, type 'c': \n")
         while not entry_num.isdigit() or int(entry_num) > (counter - 1) or int(entry_num) < 1:
-            if entry_num == "cancel":
+            if entry_num == "c":
                 break
             entry_num = input("Invalid. Select again \n")
-        if entry_num == "cancel":
+        if entry_num == "c":
             continue
         entry_cho = temp_dict[int(entry_num)]
         flash_messages.append(str(entry_cho[0]) + " wrote: ")
@@ -288,6 +291,8 @@ while choice != "5":
             flash_messages.append(">> " + str(message))
         flash_messages.append("\n")
     elif choice == "3":  # Online people
+        flash_messages.append("Online People\n")
+
         if len(online_people) == 0:
             flash_messages.append("No one is online! \n")
             continue
@@ -299,12 +304,13 @@ while choice != "5":
         flash_messages.append("\n")
     elif choice == "4":  # Video chat
         clear()
+        print("------------------Video Chat------------------ \n\n")
         if len(online_people) == 0:
             flash_messages.append("No one is online!\n")
             continue
         temp_dict = {}
         counter = 1
-        print("Online people: \n\n")
+        print("Online people: \n")
         for person in online_people:
             print(str(counter) + ". Name: " +
                   str(person[0]) + " IP: " + str(person[1]))
