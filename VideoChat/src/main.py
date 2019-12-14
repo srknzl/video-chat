@@ -358,6 +358,7 @@ while choice != "5":
         print("Closing")
         streamVideoProcess.kill()
         streamAudioProcess.kill()
+        renderOwnVideoProcess.kill()
         renderVideoProcess.kill()
         renderAudioProcess.kill()
         subprocess.run(["killall", "-9", "gst-launch-1.0"])
