@@ -82,6 +82,7 @@ def send_message(_ip, _payload):
 
 def process_messages(_data):
     decoded = _data.decode("utf-8", errors="replace")
+    # print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
@@ -109,7 +110,6 @@ def process_messages(_data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             if (name, ip) not in online_people:
-                time.sleep(0.1)
                 print("New online person:", name, ip)
                 online_people.add((name, ip))
 
@@ -160,11 +160,13 @@ def on_new_connection(conn, addr):
     with conn:
         data = conn.recv(1500)
         if data:
+            time.sleep(0.1)
             process_messages(data)
 
 
 def on_new_udp_connection(data, addr):
     if addr != (userip, 12345):
+        time.sleep(0.1)
         process_messages(data)
 
 
@@ -177,7 +179,7 @@ lasttime = 0.0
 messages = {}
 sent_messages = {}
 online_people = set()
-# online_people.add(("serkan","192.168.43.224"))
+# online_people.add(("serkan", "192.168.43.224"))
 username = input("What is your name? \n")
 userip = get_ip()
 
@@ -329,25 +331,26 @@ while choice != "5":
         person_cho = temp_dict[int(person_num)]
         person_ip = person_cho[1]
         person_ip_splitted = person_ip.split(".")
-        render_ip = "234." + str(person_ip_splitted[1]) + "." + str(
+        friend_ip = "234." + str(person_ip_splitted[1]) + "." + str(
             person_ip_splitted[2]) + "." + str(person_ip_splitted[3])
 
         user_ip_splitted = userip.split(".")
 
-        stream_ip = "234." + str(user_ip_splitted[1]) + "." + str(
+        own_ip = "234." + str(user_ip_splitted[1]) + "." + str(
             user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
 
         streamVideoProcess = subprocess.Popen(
-            ["bash", "streamVideo.sh", stream_ip, "40000"], stdout=subprocess.DEVNULL)
+            ["bash", "streamVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
         streamAudioProcess = subprocess.Popen(
-        ["bash", "streamAudio.sh", stream_ip, "50000"], stdout=subprocess.DEVNULL)
-
+            ["bash", "streamAudio.sh", own_ip, "50000"], stdout=subprocess.DEVNULL)
+        ownVideoProcess = subprocess.Popen(
+            ["bash", "renderVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
         print("Video chat started...")
-        renderVideoProcess = subprocess.Popen(["bash", "renderVideo.sh", render_ip,
-                                          "40000"], stdout=subprocess.DEVNULL)
-        renderAudioProcess = subprocess.Popen(["bash", "renderAudio.sh", render_ip,
-                                          "50000"], stdout=subprocess.DEVNULL)
-                                          
+        renderVideoProcess = subprocess.Popen(["bash", "renderVideo.sh", friend_ip,
+                                               "40000"], stdout=subprocess.DEVNULL)
+        renderAudioProcess = subprocess.Popen(["bash", "renderAudio.sh", friend_ip,
+                                               "50000"], stdout=subprocess.DEVNULL)
+
         inp = input("Press c to close video chat")
         while inp != "c":
             inp = input("Press c to close video chat")
