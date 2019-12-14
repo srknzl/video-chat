@@ -187,11 +187,11 @@ def process_messages(_data):
             send_start_call(ip)
             start_video_chat(ip)
         elif message_type == 'startcall':
+            global start_call
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            time.sleep(3)
-            print(name, "is ready.", "Video chat starting...")
-            start_video_chat(ip)
+            if ip == accepted_call_ip:
+                start_call = True            
         elif message_type == "cancelcall":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -258,7 +258,8 @@ def on_new_udp_connection(data, addr):
 
 
 def start_video_chat(person_ip):
-    # print("VIDEO CHAT")
+    global call_started
+    call_started = True
     person_ip_splitted = person_ip.split(".")
     friend_ip = "234." + str(person_ip_splitted[1]) + "." + str(
         person_ip_splitted[2]) + "." + str(person_ip_splitted[3])
@@ -285,6 +286,7 @@ def start_video_chat(person_ip):
         inp = input("Press c to close video chat")
 
     print("Closing")
+    call_started = False
     streamVideoProcess.kill()
     streamAudioProcess.kill()
     renderOwnVideoProcess.kill()
@@ -301,7 +303,14 @@ last_udp_packet = {
 lasttime = 0.0
 messages = {}
 sent_messages = {}
+
+
 calls = []
+start_call = False
+accepted_call_ip = ""
+call_started = False
+
+
 online_people = set()
 # online_people.add(("serkan", "192.168.43.224"))
 username = input("What is your name? \n")
@@ -329,6 +338,8 @@ flash_messages = ["Welcome to the transporter app. Have fun! \n"]
 while choice != "6":
     clear()
     print(transporterLogo)
+    if call_started: 
+        print("Press c to close video chat")
     for f_message in flash_messages:
         print(f_message)
     flash_messages.clear()
@@ -459,11 +470,13 @@ while choice != "6":
         send_call(person_ip)
         print("Calling", person_name + ".", "Waiting for response...")
         endCall = input("To cancel call, type 'c'.")
-        while endCall != "c":
+        while endCall != "c" and not call_started:
             print("Invalid answer, try again.")
             endCall = input("To cancel call, type 'c'.")
-        send_cancel_call(person_ip)
-        flash_messages.append("Call canceled.")
+
+        if not call_started:
+            send_cancel_call(person_ip)
+            flash_messages.append("Call canceled.")
     elif choice == "5":  # Calls
         clear()
         print("------------------Pending calls------------------ \n\n")
@@ -472,7 +485,7 @@ while choice != "6":
             continue
         for i in range(len(calls)):
             print(str(i+1)+".", "Name:", calls[i][0], "Ip:", calls[i][1])
-        person_num = input("Select a person to answer. To cancel, type 'c'.")
+        person_num = input("Select a person to answer. To cancel, type 'c'.\n")
 
         while not person_num.isdigit() or int(person_num) > len(calls) or int(person_num) < 1:
             if person_num == "c":
@@ -481,13 +494,19 @@ while choice != "6":
         if person_num == "c":
             continue
         will_be_called_person = calls[int(person_num)-1]
-        send_accept_call(will_be_called_person[1])  # ip
         try:
             calls.remove(will_be_called_person)
         except ValueError:
             pass
-        flash_messages.append(
-            "Video chat will start when your friend is ready!")
+        start_call = False
+        accepted_call_ip = will_be_called_person[1]
+        send_accept_call(will_be_called_person[1])  # ip
+        time.sleep(3)
+        if start_call:
+            print("Video call starting... ")
+            executor.submit(start_video_chat, will_be_called_person[1])
+        else:
+            flash_messages.append("No respond from other side in 3 seconds.") 
 
     # elif choice == "5":  # Online people
     #     flash_messages.append(threading.active_count())
