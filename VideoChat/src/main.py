@@ -26,7 +26,8 @@ def print_options():
     print("2. Mailbox")
     print("3. Online people")
     print("4. Start video chat")
-    print("5. Quit")
+    print("5. Pending video calls")
+    print("6. Quit")
 
 
 def get_ip():
@@ -58,26 +59,87 @@ def send_announce_packet_once(_announce_socket):
     try:
         _announce_socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
-    except TimeoutError:
-        pass
+    except Exception as e:
+        print("An error occured when broadcasting", e)
+        time.sleep(1)
 
 
-def send_response(_ip, _name):  # _ip is ip of other guy
+def send_response(_ip):  # _ip is ip of other guy
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as response_s:
-        response_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        response_s.connect((_ip, 12345))
-        response_s.sendall(("[" + str(username) + ", " + str(userip) +
-                            ", response]").encode("utf-8", errors="replace"))
-        response_s.shutdown(socket.SHUT_RDWR)
+        try:
+            response_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            response_s.connect((_ip, 12345))
+            response_s.sendall(("[" + str(username) + ", " + str(userip) +
+                                ", response]").encode("utf-8", errors="replace"))
+            response_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when message", e)
+            time.sleep(1)
 
 
 def send_message(_ip, _payload):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
-        message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        message_s.connect((_ip, 12345))
-        message_s.sendall(
-            ("[" + str(username) + ", " + str(userip) + ", message, " + str(_payload) + "]").encode("utf-8", errors="replace"))
-        message_s.shutdown(socket.SHUT_RDWR)
+        try:
+            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            message_s.connect((_ip, 12345))
+            message_s.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", message, " + str(_payload) + "]").encode("utf-8", errors="replace"))
+            message_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when message", e)
+            time.sleep(1)
+
+
+def send_call(_ip):  # Call request
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+        try:
+            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            message_s.connect((_ip, 12345))
+            message_s.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", call]").encode("utf-8", errors="replace"))
+            message_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when sending call message", e)
+            time.sleep(1)
+
+
+def send_accept_call(_ip):  # Ok to call request, sent after getting a call
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+        try:
+            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            message_s.connect((_ip, 12345))
+            message_s.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", acceptcall]").encode("utf-8", errors="replace"))
+            message_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when sending accept call message", e)
+            time.sleep(1)
+
+
+def send_start_call(_ip):  # Starting response, sent after call is accepted by other party
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+        try:
+            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            message_s.connect((_ip, 12345))
+            message_s.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", startcall]").encode("utf-8", errors="replace"))
+            message_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when sending start call message", e)
+            time.sleep(1)
+
+
+def send_cancel_call(_ip):  # Starting response, sent after call is accepted by other party
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+        try:
+            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            message_s.connect((_ip, 12345))
+            message_s.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", cancelcall]").encode("utf-8", errors="replace"))
+            message_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when sending cancel call message", e)
+            time.sleep(1)
 
 
 def process_messages(_data):
@@ -112,7 +174,32 @@ def process_messages(_data):
             if (name, ip) not in online_people:
                 print("New online person:", name, ip)
                 online_people.add((name, ip))
-
+        elif message_type == 'call':
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            print("New call from", name, ".\n", "To accept, go to calls.")
+            if (name, ip) not in calls:
+                calls.append((name, ip))
+        elif message_type == 'acceptcall':
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            print("Call accepted by", name, "starting video chat...")
+            send_start_call(ip)
+            start_video_chat(ip)
+        elif message_type == 'startcall':
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            time.sleep(3)
+            print(name, "is ready.", "Video chat starting...")
+            start_video_chat(ip)
+        elif message_type == "cancelcall":
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            print(name, "canceled a call.")
+            try:
+                calls.remove((name, ip))
+            except ValueError:
+                pass
         elif message_type == 'message':
             if len(decoded_splitted) < 4:
                 print("Got an invalid message " + str(decode))
@@ -170,6 +257,42 @@ def on_new_udp_connection(data, addr):
         process_messages(data)
 
 
+def start_video_chat(person_ip):
+    # print("VIDEO CHAT")
+    person_ip_splitted = person_ip.split(".")
+    friend_ip = "234." + str(person_ip_splitted[1]) + "." + str(
+        person_ip_splitted[2]) + "." + str(person_ip_splitted[3])
+
+    user_ip_splitted = userip.split(".")
+
+    own_ip = "234." + str(user_ip_splitted[1]) + "." + str(
+        user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
+
+    streamVideoProcess = subprocess.Popen(
+        ["bash", "streamVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
+    streamAudioProcess = subprocess.Popen(
+        ["bash", "streamAudio.sh", own_ip, "50000"], stdout=subprocess.DEVNULL)
+    renderOwnVideoProcess = subprocess.Popen(
+        ["bash", "renderVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
+    renderVideoProcess = subprocess.Popen(
+        ["bash", "renderVideo.sh", friend_ip, "40000"], stdout=subprocess.DEVNULL)
+    renderAudioProcess = subprocess.Popen(
+        ["bash", "renderAudio.sh", friend_ip, "50000"], stdout=subprocess.DEVNULL)
+    print("Video chat started...")
+
+    inp = input("Press c to close video chat")
+    while inp != "c":
+        inp = input("Press c to close video chat")
+
+    print("Closing")
+    streamVideoProcess.kill()
+    streamAudioProcess.kill()
+    renderOwnVideoProcess.kill()
+    renderVideoProcess.kill()
+    renderAudioProcess.kill()
+    subprocess.run(["killall", "-9", "gst-launch-1.0"])
+
+
 last_udp_packet = {
     "ip": "",
     "name": ""
@@ -178,6 +301,7 @@ last_udp_packet = {
 lasttime = 0.0
 messages = {}
 sent_messages = {}
+calls = []
 online_people = set()
 # online_people.add(("serkan", "192.168.43.224"))
 username = input("What is your name? \n")
@@ -202,7 +326,7 @@ while not username:
 clear()
 choice = None
 flash_messages = ["Welcome to the transporter app. Have fun! \n"]
-while choice != "5":
+while choice != "6":
     clear()
     print(transporterLogo)
     for f_message in flash_messages:
@@ -329,39 +453,41 @@ while choice != "5":
         if person_num == "c":
             continue
         person_cho = temp_dict[int(person_num)]
+        person_name = person_cho[0]
         person_ip = person_cho[1]
-        person_ip_splitted = person_ip.split(".")
-        friend_ip = "234." + str(person_ip_splitted[1]) + "." + str(
-            person_ip_splitted[2]) + "." + str(person_ip_splitted[3])
 
-        user_ip_splitted = userip.split(".")
+        send_call(person_ip)
+        print("Calling", person_name + ".", "Waiting for response...")
+        endCall = input("To cancel call, type 'c'.")
+        while endCall != "c":
+            print("Invalid answer, try again.")
+            endCall = input("To cancel call, type 'c'.")
+        send_cancel_call(person_ip)
+        flash_messages.append("Call canceled.")
+    elif choice == "5":  # Calls
+        clear()
+        print("------------------Pending calls------------------ \n\n")
+        if len(calls) == 0:
+            flash_messages.append("No pending calls!\n")
+            continue
+        for i in range(len(calls)):
+            print(str(i+1)+".", "Name:", calls[i][0], "Ip:", calls[i][1])
+        person_num = input("Select a person to answer. To cancel, type 'c'.")
 
-        own_ip = "234." + str(user_ip_splitted[1]) + "." + str(
-            user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
-
-        streamVideoProcess = subprocess.Popen(
-            ["bash", "streamVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
-        streamAudioProcess = subprocess.Popen(
-            ["bash", "streamAudio.sh", own_ip, "50000"], stdout=subprocess.DEVNULL)
-        renderOwnVideoProcess = subprocess.Popen(
-            ["bash", "renderVideo.sh", own_ip, "40000"], stdout=subprocess.DEVNULL)
-        renderVideoProcess = subprocess.Popen(
-            ["bash", "renderVideo.sh", friend_ip, "40000"], stdout=subprocess.DEVNULL)
-        renderAudioProcess = subprocess.Popen(
-            ["bash", "renderAudio.sh", friend_ip, "50000"], stdout=subprocess.DEVNULL)
-        print("Video chat started...")
-
-        inp = input("Press c to close video chat")
-        while inp != "c":
-            inp = input("Press c to close video chat")
-
-        print("Closing")
-        streamVideoProcess.kill()
-        streamAudioProcess.kill()
-        renderOwnVideoProcess.kill()
-        renderVideoProcess.kill()
-        renderAudioProcess.kill()
-        subprocess.run(["killall", "-9", "gst-launch-1.0"])
+        while not person_num.isdigit() or int(person_num) > len(calls) or int(person_num) < 1:
+            if person_num == "c":
+                break
+            person_num = input("Invalid person number. Please enter again: \n")
+        if person_num == "c":
+            continue
+        will_be_called_person = calls[int(person_num)-1]
+        send_accept_call(will_be_called_person[1])  # ip
+        try:
+            calls.remove(will_be_called_person)
+        except ValueError:
+            pass
+        flash_messages.append(
+            "Video chat will start when your friend is ready!")
 
     # elif choice == "5":  # Online people
     #     flash_messages.append(threading.active_count())
