@@ -334,22 +334,29 @@ while choice != "5":
 
         user_ip_splitted = userip.split(".")
 
-        stream_ip = "234." + str(user_ip_splitted[1]) + "." + str(
+        stream__ip = "234." + str(user_ip_splitted[1]) + "." + str(
             user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
 
-        streamProcess = subprocess.Popen(
-            ["bash", "streamVideo.sh", stream_ip, "1000"], stdout=subprocess.DEVNULL)
-        print("Stream started...")
-        renderProcess = subprocess.Popen(["bash", "renderVideo.sh", render_ip,
-                                          "1000"], stdout=subprocess.DEVNULL)
+        streamVideoProcess = subprocess.Popen(
+            ["bash", "streamVideo.sh", stream_ip, "40000"], stdout=subprocess.DEVNULL)
+        streamAudioProcess = subprocess.Popen(
+        ["bash", "streamAudio.sh", stream_ip, "50000"], stdout=subprocess.DEVNULL)
 
+        print("Video chat started...")
+        renderVideoProcess = subprocess.Popen(["bash", "renderVideo.sh", render_ip,
+                                          "40000"], stdout=subprocess.DEVNULL)
+        renderAudioProcess = subprocess.Popen(["bash", "renderAudio.sh", render_ip,
+                                          "50000"], stdout=subprocess.DEVNULL)
+                                          
         inp = input("Press c to close video chat")
         while inp != "c":
             inp = input("Press c to close video chat")
 
         print("Closing")
-        streamProcess.kill()
-        renderProcess.kill()
+        streamVideoProcess.kill()
+        streamAudioProcess.kill()
+        renderVideoProcess.kill()
+        renderAudioProcess.kill()
         subprocess.run(["killall", "-9", "gst-launch-1.0"])
 
     # elif choice == "5":  # Online people
