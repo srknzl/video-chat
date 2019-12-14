@@ -334,7 +334,7 @@ while choice != "5":
 
         user_ip_splitted = userip.split(".")
 
-        stream__ip = "234." + str(user_ip_splitted[1]) + "." + str(
+        stream_ip = "234." + str(user_ip_splitted[1]) + "." + str(
             user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
 
         streamVideoProcess = subprocess.Popen(
