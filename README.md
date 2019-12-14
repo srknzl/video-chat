@@ -7,6 +7,7 @@ Video Chat Over Network Using Gstreamer
 * GTK+3
 * Python 2 (2.6 or later) or Python 3 (3.1 or later)
 * gobject-introspection (needed for accessing gtk in python.)
+* notify-send
 
 
 Note for gobject: Recent versions of PyGObject and its dependencies are packaged by nearly all major Linux distributions. So, if you use Linux, you can probably get started by installing the package from the official repository for your distribution.
@@ -17,7 +18,7 @@ Note for gobject: Recent versions of PyGObject and its dependencies are packaged
 ## System Requirements
 psmisc -> for killall command if you do not have it installed 
 gstreamer -> for streaming video and audio, also for rendering them.
-
+notify-send -> for visual notification of messages or app related information.
 ### gstreamer Installation:
 ```
 sudo apt install v4l-utils
@@ -26,3 +27,5 @@ sudo apt-get install libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-pl
 
 sudo apt install gstreamer1.0-plugins-*
 ```
+### notify-send Installation
+sudo apt-get install libnotify-bin
