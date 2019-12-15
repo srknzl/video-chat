@@ -1,3 +1,5 @@
+Bugslardan veya todolardan bitenlerin yanına yıldız konacak.
+
 Todos:
 
 1- Toggle video & audio  
@@ -13,4 +15,6 @@ Todos:
 3- Videodan çıkma karşı tarafı da kapatsın grup ve bireysel
 
 Bugs: 
-1- Ayrıca video chat devam ederken quit yapılınca goodbye yazıyor ama video call devam ediyor
+ 
+*1- Ayrıca video chat devam ederken quit yapılınca goodbye yazıyor ama video call devam ediyor
+2-

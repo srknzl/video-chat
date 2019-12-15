@@ -4,6 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from os import system, name
 import subprocess
 import time
+import atexit
+
 transporterLogo = """
  _____                                      _            
 /__   \_ __ __ _ _ __  ___ _ __   ___  _ __| |_ ___ _ __ 
@@ -291,11 +293,15 @@ def start_video_chat(person_ip):
 
     print("Closing")
     call_started = False
-    streamVideoProcess.kill()
-    streamAudioProcess.kill()
-    renderOwnVideoProcess.kill()
-    renderVideoProcess.kill()
-    renderAudioProcess.kill()
+    # streamVideoProcess.kill()
+    # streamAudioProcess.kill()
+    # renderOwnVideoProcess.kill()
+    # renderVideoProcess.kill()
+    # renderAudioProcess.kill()
+    subprocess.run(["killall", "-9", "gst-launch-1.0"])
+
+
+def cleanup():
     subprocess.run(["killall", "-9", "gst-launch-1.0"])
 
 
@@ -335,6 +341,10 @@ announcer.start()
 while not username:
     print("Please enter a name!")
     username = input("What is your name? \n")
+
+
+atexit.register(cleanup)
+
 
 clear()
 choice = None
