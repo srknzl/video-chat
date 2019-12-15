@@ -1,0 +1,16 @@
+Todos:
+
+1- Toggle video & audio  
+2- Group chat & Group video chat protokolleri
+
+* Groupda mesajlaşma olacak
+* Herkes file systemde girmiş olduğu groupları tutacak, istendiğinde broadcastliyecek
+* Video chate herkes istediği zaman girebilecek, video chatte olanların ses ve videosu render edilecek.
+* Biri gruba mesaj atarken veya video chat başlatırken, bu grupta kimler var diye broadcast atacak, cevap tcp ile ben varım şeklinde
+* O kişilere mesaj gidecek, o kişiler o mesajı grup mesajı olarak gruba ekleyecek
+* Grupta video chat devam ederken bir başkası girerse video chat e onunda görüntü sesi render edilecek video chattekilerde.
+
+3- Videodan çıkma karşı tarafı da kapatsın grup ve bireysel
+
+Bugs: 
+1- Ayrıca video chat devam ederken quit yapılınca goodbye yazıyor ama video call devam ediyor
