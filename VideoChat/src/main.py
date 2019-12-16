@@ -1,7 +1,7 @@
 import socket
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from os import system, name
+from os import system, name, path, walk
 import subprocess
 import time
 import atexit
@@ -29,7 +29,11 @@ def print_options():
     print("3. Online people")
     print("4. Start video chat")
     print("5. Pending video calls")
-    print("6. Quit")
+    print("6. Manage Groups")
+    print("7. Send message to a group")
+    print("8. Attend video chat in a group")
+    print("9. See group video chats going on. ")
+    print("q. Quit")
 
 
 def get_ip():
@@ -298,11 +302,11 @@ def start_video_chat(person_ip):
     # renderOwnVideoProcess.kill()
     # renderVideoProcess.kill()
     # renderAudioProcess.kill()
-    subprocess.run(["killall", "-9", "gst-launch-1.0"])
+    subprocess.run(["killall", "-9", "gst-launch-1.0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def cleanup():
-    subprocess.run(["killall", "-9", "gst-launch-1.0"])
+    subprocess.run(["killall", "-9", "gst-launch-1.0"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 last_udp_packet = {
@@ -310,6 +314,7 @@ last_udp_packet = {
     "name": ""
 }
 
+#!Main
 lasttime = 0.0
 messages = {}
 sent_messages = {}
@@ -343,13 +348,28 @@ while not username:
     username = input("What is your name? \n")
 
 
-atexit.register(cleanup)
+groups = []
 
+groups_folder_exists = path.isdir("groups")
+if not groups_folder_exists:
+    try:
+        os.mkdir("groups")
+    except OSError:
+        print ("Creation of the directory 'groups' failed")
+        time.sleep(2)
+    else:
+        print ("Successfully created the directory 'groups'")
+        time.sleep(2)
+else: 
+    for (root,dirs,files) in walk("groups"):
+        groups = files
+
+atexit.register(cleanup)
 
 clear()
 choice = None
 flash_messages = ["Welcome to the transporter app. Have fun! \n"]
-while choice != "6":
+while choice != "q":
     clear()
     print(transporterLogo)
     if call_started:
@@ -521,7 +541,16 @@ while choice != "6":
             executor.submit(start_video_chat, will_be_called_person[1])
         else:
             flash_messages.append("No respond from other side in 3 seconds.")
-    elif choice == "9":  # ! testing purposes
+    elif choice == "6": # Manage Groups
+        groups_string = ", ".join(groups)
+        flash_messages.append("You are in these groups: " + groups_string + "\n")
+    elif choice == "7": # Send message to a group
+    
+    elif choice == "8": # Attend video chat in a group
+    
+    elif choice == "9": # See group video chats going on. 
+
+    elif choice == "t":  # ! testing purposes
         clear()
         print("------------------Testing------------------ \n\n")
         if len(online_people) == 0:
