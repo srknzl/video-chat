@@ -1,8 +1,9 @@
 import socket
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from os import system, name, path, walk
+from os import system, name, path, walk, mkdir, remove
 import subprocess
+import re
 import time
 import atexit
 
@@ -34,6 +35,56 @@ def print_options():
     print("8. Attend video chat in a group")
     print("9. See group video chats going on. ")
     print("q. Quit")
+
+
+def print_group_manage_options():
+    print("1. List of all groups")
+    print("2. List of groups I attended")
+    print("3. Enter a group")
+    print("4. Leave a group")
+    print("c. Cancel")
+
+def enter_group(groupname): #todo Enter a group
+    pass
+
+def leave_group(groupname): #todo Leave a group
+    pass
+
+
+def alphaNumericFilter(word):
+    if re.fullmatch("^[a-zA-Z0-9_]+$", word):
+        return True
+    else: 
+        return False
+
+
+def sync_groups():
+    global groups
+    groups_isdir = path.isdir("groups")
+    groups_isfile = path.isfile("groups")
+    if groups_isfile:
+        remove("groups")
+        try:
+            mkdir("groups")
+        except OSError:
+            print ("Creation of the directory 'groups' failed")
+            time.sleep(2)
+        else:
+            print ("Successfully created the directory 'groups'")
+            time.sleep(2)
+    elif groups_isdir:
+        for (root,dirs,files) in walk("groups"):
+            groups = filter(alphaNumericFilter, files)
+
+    else: 
+        try:
+            mkdir("groups")
+        except OSError:
+            print ("Creation of the directory 'groups' failed")
+            time.sleep(2)
+        else:
+            print ("Successfully created the directory 'groups'")
+            time.sleep(2)
 
 
 def get_ip():
@@ -148,6 +199,43 @@ def send_cancel_call(_ip):  # Starting response, sent after call is accepted by 
             time.sleep(1)
 
 
+def send_allgroups_request():
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as allgroups_s:
+        allgroups_s.settimeout(0.2)
+        allgroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        allgroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+        send_allgroups_req_packet_once(allgroups_s)
+        time.sleep(1)
+        send_allgroups_req_packet_once(allgroups_s)
+        time.sleep(1)
+        send_allgroups_req_packet_once(allgroups_s)
+
+
+
+def send_allgroups_req_packet_once(_allgroups_socket):
+    try:
+        _allgroups_socket.sendto(("[" + str(username) + ", " + str(userip) + ", allgroups]").encode(
+            "utf-8", errors="replace"), ('<broadcast>', 12345))
+    except Exception as e:
+        print("An error occured when broadcasting all groups request", e)
+        time.sleep(1)
+
+
+def send_my_groups_to(ip, groups):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as mygroups_s:
+        try:
+            mygroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            mygroups_s.connect((_ip, 12345))
+            mygroups_string = ", ".join(groups)
+            mygroups_s.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", mygroups, " + mygroups_string + "]" ).encode("utf-8", errors="replace"))
+            message_s.shutdown(socket.SHUT_RDWR)
+        except Exception as e:
+            print("An error occured when sending my groups", e)
+            time.sleep(1)
+
+
 def process_messages(_data):
     decoded = _data.decode("utf-8", errors="replace")
     # print(decoded)
@@ -208,6 +296,10 @@ def process_messages(_data):
                 calls.remove((name, ip))
             except ValueError:
                 pass
+        elif message_type == "allgroups":
+            ip = decoded_splitted[1].strip(' ')
+            sync_groups()
+            send_my_groups_to(ip, groups)
         elif message_type == 'message':
             if len(decoded_splitted) < 4:
                 print("Got an invalid message " + str(decode))
@@ -347,22 +439,10 @@ while not username:
     print("Please enter a name!")
     username = input("What is your name? \n")
 
-
+all_groups = []
 groups = []
 
-groups_folder_exists = path.isdir("groups")
-if not groups_folder_exists:
-    try:
-        os.mkdir("groups")
-    except OSError:
-        print ("Creation of the directory 'groups' failed")
-        time.sleep(2)
-    else:
-        print ("Successfully created the directory 'groups'")
-        time.sleep(2)
-else: 
-    for (root,dirs,files) in walk("groups"):
-        groups = files
+sync_groups()
 
 atexit.register(cleanup)
 
@@ -544,12 +624,49 @@ while choice != "q":
     elif choice == "6": # Manage Groups
         groups_string = ", ".join(groups)
         flash_messages.append("You are in these groups: " + groups_string + "\n")
-    elif choice == "7": # Send message to a group
-    
-    elif choice == "8": # Attend video chat in a group
-    
-    elif choice == "9": # See group video chats going on. 
+        
+        print_group_manage_options()
+        gchoice = input("Choose an action: \n")
 
+        # def print_group_manage_options():
+        #     print("1. List of all groups")
+        #     print("2. List of groups I attended")
+        #     print("3. Enter a group")
+        #     print("4. Leave a group")
+        #     print("c. Cancel")
+
+        while gchoice != "c":
+            gchoice = input("Choose an action: \n")
+            print_group_manage_options()
+            if gchoice == "1": # todo List of all groups
+                print("Syncing groups please wait 5 seconds..")
+                send_allgroups_request()
+                time.sleep(5)
+                all_groups_string = ", ".join(all_groups)
+                print("All groups: ", all_groups_string)
+            elif gchoice == "2": # List of groups I attended
+                sync_groups()
+                groups_string = ", ".join(groups)
+                print("You are in these groups: ", groups_string)
+            elif gchoice == "3": # todo Enter a group
+                groupname = input("Enter group name to enter. Remember that only alphanumeric groups are accepted. To cancel type 'c'")
+                if groupname == "c":
+                    continue
+                enter_group(groupname)
+            elif gchoice == "4": # todo Leave a group
+                sync_groups()
+                groups_string = ", ".join(groups)
+                print("You are in these groups: ", groups_string)
+                groupname = input("Enter group name to leave. Remember that only alphanumeric groups are accepted. To cancel type 'c'")
+                if groupname == "c":
+                    continue
+                leave_group(groupname)
+    elif choice == "7": # todo Send message to a group
+        pass
+    elif choice == "8": # todo Attend video chat in a group
+        pass
+    elif choice == "9": # todo See group video chats going on. 
+        pass
     elif choice == "t":  # ! testing purposes
         clear()
         print("------------------Testing------------------ \n\n")
