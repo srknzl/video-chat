@@ -44,14 +44,47 @@ def print_group_manage_options():
     print("4. Leave a group")
     print("c. Cancel")
 
-def enter_group(groupname): #todo Enter a group
-    pass
 
-def leave_group(groupname): #todo Leave a group
-    pass
+def enter_group(groupname, flash_messages): # Enter a group
+    sync_groups()
+    if not isAlphaNumeric(groupname):
+        flash_messages.append("EnterGroup: The groupname you entered is not alphanumeric.")
+    if groupname not in groups:
+        f = open("groups/" + groupname,"w+")
+        f.close()
+        flash_messages.append("EnterGroup: Group created")
+    else:
+        flash_messages.append("EnterGroup: You are already in this group")
 
 
-def alphaNumericFilter(word):
+def leave_group(groupname, flash_messages): # Leave a group
+    sync_groups()
+    if not isAlphaNumeric(groupname):
+        flash_messages.append("LeaveGroup: The groupname you entered is not alphanumeric.")
+        return
+    if groupname not in groups:
+        flash_messages.append("LeaveGroup: You are not in that group.")
+    else:
+        flash_messages.append("LeaveGroup: You left group " + groupname)
+        remove("groups/" + groupname)
+
+
+def print_groups(flash_messages):
+    if flash_messages != None:
+        if len(groups) != 0:
+            groups_string = ", ".join(groups)
+            flash_messages.append("Groups: You are in these groups: " + groups_string + "\n")
+        else: 
+            flash_messages.append("Groups: You are not in any group")
+    else:
+        if len(groups) != 0:
+            groups_string = ", ".join(groups)
+            print("Groups: You are in these groups: " + groups_string + "\n")
+        else: 
+            print("Groups: You are not in any group")
+
+
+def isAlphaNumeric(word):
     if re.fullmatch("^[a-zA-Z0-9_]+$", word):
         return True
     else: 
@@ -67,14 +100,17 @@ def sync_groups():
         try:
             mkdir("groups")
         except OSError:
-            print ("Creation of the directory 'groups' failed")
+            print("Creation of the directory 'groups' failed")
             time.sleep(2)
         else:
-            print ("Successfully created the directory 'groups'")
+            print("Successfully created the directory 'groups'")
             time.sleep(2)
     elif groups_isdir:
         for (root,dirs,files) in walk("groups"):
-            groups = filter(alphaNumericFilter, files)
+            for filename in files:
+                if filename == "c": # Do not allow a group called 'c' as it is used as cancel character.
+                    files.remove(filename)
+            groups = list(filter(isAlphaNumeric, files))
 
     else: 
         try:
@@ -148,52 +184,52 @@ def send_message(_ip, _payload):
 
 
 def send_call(_ip):  # Call request
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as call_s:
         try:
-            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            message_s.connect((_ip, 12345))
-            message_s.sendall(
+            call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            call_s.connect((_ip, 12345))
+            call_s.sendall(
                 ("[" + str(username) + ", " + str(userip) + ", call]").encode("utf-8", errors="replace"))
-            message_s.shutdown(socket.SHUT_RDWR)
+            call_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
             print("An error occured when sending call message", e)
             time.sleep(1)
 
 
 def send_accept_call(_ip):  # Ok to call request, sent after getting a call
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as accept_call_s:
         try:
-            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            message_s.connect((_ip, 12345))
-            message_s.sendall(
+            accept_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            accept_call_s.connect((_ip, 12345))
+            accept_call_s.sendall(
                 ("[" + str(username) + ", " + str(userip) + ", acceptcall]").encode("utf-8", errors="replace"))
-            message_s.shutdown(socket.SHUT_RDWR)
+            accept_call_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
             print("An error occured when sending accept call message", e)
             time.sleep(1)
 
 
 def send_start_call(_ip):  # Starting response, sent after call is accepted by other party
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as start_call_s:
         try:
-            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            message_s.connect((_ip, 12345))
-            message_s.sendall(
+            start_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            start_call_s.connect((_ip, 12345))
+            start_call_s.sendall(
                 ("[" + str(username) + ", " + str(userip) + ", startcall]").encode("utf-8", errors="replace"))
-            message_s.shutdown(socket.SHUT_RDWR)
+            start_call_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
             print("An error occured when sending start call message", e)
             time.sleep(1)
 
 
 def send_cancel_call(_ip):  # Starting response, sent after call is accepted by other party
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cancel_call_s:
         try:
-            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            message_s.connect((_ip, 12345))
-            message_s.sendall(
+            cancel_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            cancel_call_s.connect((_ip, 12345))
+            cancel_call_s.sendall(
                 ("[" + str(username) + ", " + str(userip) + ", cancelcall]").encode("utf-8", errors="replace"))
-            message_s.shutdown(socket.SHUT_RDWR)
+            cancel_call_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
             print("An error occured when sending cancel call message", e)
             time.sleep(1)
@@ -222,15 +258,19 @@ def send_allgroups_req_packet_once(_allgroups_socket):
         time.sleep(1)
 
 
-def send_my_groups_to(ip, groups):
+def send_my_groups_to(_ip, groups):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as mygroups_s:
         try:
             mygroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             mygroups_s.connect((_ip, 12345))
-            mygroups_string = ", ".join(groups)
-            mygroups_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", mygroups, " + mygroups_string + "]" ).encode("utf-8", errors="replace"))
-            message_s.shutdown(socket.SHUT_RDWR)
+            if len(groups) == 0:
+                mygroups_s.sendall(
+                    ("[" + str(username) + ", " + str(userip) + ", mygroups]" ).encode("utf-8", errors="replace"))
+            else:    
+                mygroups_string = ", ".join(groups)
+                mygroups_s.sendall(
+                    ("[" + str(username) + ", " + str(userip) + ", mygroups, " + mygroups_string + "]" ).encode("utf-8", errors="replace"))
+            mygroups_s.shutdown(socket.SHUT_RDWR)
         except Exception as e:
             print("An error occured when sending my groups", e)
             time.sleep(1)
@@ -255,10 +295,11 @@ def process_messages(_data):
             if(time.time()-lasttime <= 3 and lastip == ip and lastname == name):
                 pass
             # not me and also not in online list
-            elif (name, ip) not in online_people and (name, ip) != (username, userip):
+            elif (name, ip) != (username, userip):
                 try:
-                    subprocess.run(["notify-send","New person online: " + name + ", Ip: " + ip])
-                    online_people.add((name, ip))
+                    if (name, ip) not in online_people:
+                        subprocess.run(["notify-send","New person online: " + name + ", Ip: " + ip])
+                        online_people.add((name, ip))
                     executor.submit(send_response, ip)
                 except Exception as e:
                     print(e)
@@ -298,8 +339,15 @@ def process_messages(_data):
                 pass
         elif message_type == "allgroups":
             ip = decoded_splitted[1].strip(' ')
-            sync_groups()
-            send_my_groups_to(ip, groups)
+            if ip != userip:
+                sync_groups()
+                send_my_groups_to(ip, groups)
+        elif message_type == "mygroups":
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            for i in range(3,len(decoded_splitted)):
+                group = decoded_splitted[i].strip(' ')
+                all_groups.add(group)
         elif message_type == 'message':
             if len(decoded_splitted) < 4:
                 print("Got an invalid message " + str(decode))
@@ -439,7 +487,7 @@ while not username:
     print("Please enter a name!")
     username = input("What is your name? \n")
 
-all_groups = []
+all_groups = set()
 groups = []
 
 sync_groups()
@@ -622,45 +670,50 @@ while choice != "q":
         else:
             flash_messages.append("No respond from other side in 3 seconds.")
     elif choice == "6": # Manage Groups
-        groups_string = ", ".join(groups)
-        flash_messages.append("You are in these groups: " + groups_string + "\n")
-        
-        print_group_manage_options()
-        gchoice = input("Choose an action: \n")
-
-        # def print_group_manage_options():
-        #     print("1. List of all groups")
-        #     print("2. List of groups I attended")
-        #     print("3. Enter a group")
-        #     print("4. Leave a group")
-        #     print("c. Cancel")
-
-        while gchoice != "c":
-            gchoice = input("Choose an action: \n")
+        clear()
+        print("------------------Manage Groups------------------ \n\n")
+        sync_groups()
+        print_groups(flash_messages)
+        flash_messages = []
+        while True:
+            clear()
+            for message in flash_messages:
+                print(message)
+            flash_messages.clear()
             print_group_manage_options()
-            if gchoice == "1": # todo List of all groups
+            gchoice = input("Choose an action: \n")
+            if gchoice == "c":
+                break
+            if gchoice == "1": # List of all groups
                 print("Syncing groups please wait 5 seconds..")
+                all_groups.clear()
                 send_allgroups_request()
                 time.sleep(5)
-                all_groups_string = ", ".join(all_groups)
-                print("All groups: ", all_groups_string)
+                sync_groups()
+                for group in groups: 
+                    all_groups.add(group)
+                if len(all_groups) == 0:
+                    flash_messages.append("No groups found")
+                else:
+                    all_groups_string = ", ".join(all_groups)
+                    flash_messages.append("All groups: " + all_groups_string)
             elif gchoice == "2": # List of groups I attended
                 sync_groups()
-                groups_string = ", ".join(groups)
-                print("You are in these groups: ", groups_string)
-            elif gchoice == "3": # todo Enter a group
-                groupname = input("Enter group name to enter. Remember that only alphanumeric groups are accepted. To cancel type 'c'")
-                if groupname == "c":
-                    continue
-                enter_group(groupname)
-            elif gchoice == "4": # todo Leave a group
+                print_groups(flash_messages)
+            elif gchoice == "3": # Enter a group
                 sync_groups()
-                groups_string = ", ".join(groups)
-                print("You are in these groups: ", groups_string)
-                groupname = input("Enter group name to leave. Remember that only alphanumeric groups are accepted. To cancel type 'c'")
+                print_groups(flash_messages)
+                groupname = input("Enter group name to enter. Remember that only alphanumeric groups are accepted. To cancel type 'c'\n")
                 if groupname == "c":
                     continue
-                leave_group(groupname)
+                enter_group(groupname, flash_messages)
+            elif gchoice == "4": # Leave a group
+                sync_groups()
+                print_groups(flash_messages)
+                groupname = input("Enter group name to leave. Remember that only alphanumeric groups are accepted. To cancel type 'c'\n")
+                if groupname == "c":
+                    continue
+                leave_group(groupname, flash_messages)
     elif choice == "7": # todo Send message to a group
         pass
     elif choice == "8": # todo Attend video chat in a group
