@@ -916,7 +916,7 @@ while choice != "q":
                 print_groups(flash_messages)
             elif gchoice == "3":  # Enter a group
                 sync_groups()
-                print_groups(flash_messages)
+                print_groups(None)
                 groupname = input(
                     "Enter group name to enter. Remember that only alphanumeric groups are accepted. To cancel type 'c'\n")
                 if groupname == "c":
@@ -924,7 +924,7 @@ while choice != "q":
                 enter_group(groupname, flash_messages)
             elif gchoice == "4":  # Leave a group
                 sync_groups()
-                print_groups(flash_messages)
+                print_groups(None)
                 groupname = input(
                     "Enter group name to leave. Remember that only alphanumeric groups are accepted. To cancel type 'c'\n")
                 if groupname == "c":
