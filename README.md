@@ -4,7 +4,6 @@ Video Chat Over Network Using Gstreamer
 
 ## 1.1. Dependencies
 * gstreamer
-* GTK+3
 * Python 2 (2.6 or later) or Python 3 (3.1 or later)
 * gobject-introspection (needed for accessing gtk in python.)
 * notify-send
