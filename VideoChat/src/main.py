@@ -489,15 +489,12 @@ def start_video_chat(person_ip):
 
     print("Closing")
     call_started = False
-    try:
-        print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
-        os.kill(streamVideoProcessPid, signal.SIGTERM)
-        os.kill(streamAudioProcessPid, signal.SIGTERM)
-        os.kill(renderOwnVideoProcessPid, signal.SIGTERM)
-        os.kill(renderVideoProcessPid, signal.SIGTERM)
-        os.kill(renderAudioProcessPid, signal.SIGTERM)
-    except Exception as e:
-        print(e)
+    print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
+    kill(streamVideoProcessPid, signal.SIGTERM)
+    kill(streamAudioProcessPid, signal.SIGTERM)
+    kill(renderOwnVideoProcessPid, signal.SIGTERM)
+    kill(renderVideoProcessPid, signal.SIGTERM)
+    kill(renderAudioProcessPid, signal.SIGTERM)
     # Kill gstreamer processes
     
     print("Done closing")

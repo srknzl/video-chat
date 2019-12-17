@@ -17,7 +17,7 @@ Todos:
 5- Video chatten çıkarken killenmedi.
 6- Group chat kendini iki kere açıyor.
 7- Enter leaveden önce bulunduğun groupları listele.
-
+8- Çıkarken haber verme.
 Bugs: 
  
 *1- Ayrıca video chat devam ederken quit yapılınca goodbye yazıyor ama video call devam ediyor
