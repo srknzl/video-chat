@@ -246,7 +246,7 @@ def send_start_call(ip):  # Starting response, sent after call is accepted by ot
             time.sleep(1)
 
 
-def send_cancel_call(ip):  # Starting response, sent after call is accepted by other party
+def send_cancel_call(ip):  # Sent when 1-1 call is canceled
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cancel_call_s:
         try:
             cancel_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -266,9 +266,7 @@ def send_allgroups_request():
         allgroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         send_allgroups_req_packet_once(allgroups_s)
-        time.sleep(1)
         send_allgroups_req_packet_once(allgroups_s)
-        time.sleep(1)
         send_allgroups_req_packet_once(allgroups_s)
 
 
@@ -322,7 +320,7 @@ def process_messages(data):
         elif message_type == 'call':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            subprocess.run(["notify-send", "New call from" +
+            subprocess.run(["notify-send", "New call from " +
                             name + ".\n" + "To accept, go to calls."])
             if (name, ip) not in calls:
                 calls.append((name, ip))
@@ -342,7 +340,7 @@ def process_messages(data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             subprocess.run(
-                ["notify-send", name + " canceled a call."], shellss)
+                ["notify-send", name + " canceled a call."])
             try:
                 calls.remove((name, ip))
             except ValueError:
@@ -362,7 +360,7 @@ def process_messages(data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
-            if active_video_chat_group == groupname and (name,ip) not in active_video_chat_attendees and ip != userip:
+            if call_started and active_video_chat_group == groupname and (name,ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
                 send_attendence_response_to_videochat_request(ip, groupname)
@@ -456,6 +454,9 @@ def start_video_chat(person_ip):
     own_ip = "234." + str(user_ip_splitted[1]) + "." + str(
         user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
 
+    subprocess.run(["killall", "-9", "gst-launch-1.0"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     streamVideoProcess = subprocess.Popen(
         ["bash", "streamVideo.sh", own_ip, "40000"], stdout=subprocess.PIPE)
     outs, errs = streamVideoProcess.communicate()
@@ -489,23 +490,16 @@ def start_video_chat(person_ip):
 
     print("Closing")
     call_started = False
-    print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
+    # print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
+    # Kill gstreamer processes
     kill(streamVideoProcessPid, signal.SIGTERM)
     kill(streamAudioProcessPid, signal.SIGTERM)
     kill(renderOwnVideoProcessPid, signal.SIGTERM)
     kill(renderVideoProcessPid, signal.SIGTERM)
     kill(renderAudioProcessPid, signal.SIGTERM)
-    # Kill gstreamer processes
     
     print("Done closing")
-    # streamVideoProcess.kill()
-    # streamAudioProcess.kill()
-    # renderOwnVideoProcess.kill()
-    # renderVideoProcess.kill()
-    # renderAudioProcess.kill()
-    # subprocess.run(["killall", "-9", "gst-launch-1.0"],
-    #                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
+    
 
 def render_video_chat(name, ip): # Render other group members' video audio and add to attendees object 
     global active_video_chat_attendee_processes
@@ -535,9 +529,7 @@ def send_group_videochat_start(groupname):
         groupchatstart_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         send_group_videostart_packet_once(groupchatstart_s, groupname)
-        time.sleep(1)
         send_group_videostart_packet_once(groupchatstart_s, groupname)
-        time.sleep(1)
         send_group_videostart_packet_once(groupchatstart_s, groupname)
 
 
@@ -557,9 +549,7 @@ def send_group_video_chat_leave(groupname):
         groupchatleave_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
         send_group_videostart_packet_once(groupchatleave_s, groupname)
-        time.sleep(1)
         send_group_videostart_packet_once(groupchatleave_s, groupname)
-        time.sleep(1)
         send_group_videostart_packet_once(groupchatleave_s, groupname)
 
 
@@ -579,6 +569,8 @@ def start_group_video_chat(groupname, flash_messages):
         sync_groups()
         print_groups(None)
         return False
+    subprocess.run(["killall", "-9", "gst-launch-1.0"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     call_started = True
     active_video_chat_attendees = []
     active_video_chat_group = groupname
@@ -619,23 +611,21 @@ def render_my_own_video_and_audio(flash_messages):
     while inp != "c":
         inp = input("Press c to close video chat\n")
     print("Closing group chat")
-    try:
-        send_group_video_chat_leave(active_video_chat_group)
-        call_started = False
-        kill(streamVideoProcessPid, signal.SIGKILL)
-        kill(streamAudioProcessPid, signal.SIGKILL)
-        kill(renderOwnVideoProcessPid, signal.SIGKILL)
-        for user_entry in active_video_chat_attendee_processes:
-            processes = active_video_chat_attendee_processes[user_entry]
-            for pid in processes:
-                print("Killing",pid)
-                kill(pid, signal.SIGKILL)
-        active_video_chat_attendees = []
-        active_video_chat_group = ""
-        active_video_chat_attendee_processes = {}
-    except Exception as e:
-        print(e)
-    print("Done closing")
+    send_group_video_chat_leave(active_video_chat_group)
+    call_started = False
+
+    kill(streamVideoProcessPid, signal.SIGKILL)
+    kill(streamAudioProcessPid, signal.SIGKILL)
+    kill(renderOwnVideoProcessPid, signal.SIGKILL)
+    for user_entry in active_video_chat_attendee_processes:
+        processes = active_video_chat_attendee_processes[user_entry]
+        for pid in processes:
+            # print("Killing",pid)
+            kill(pid, signal.SIGKILL)
+    active_video_chat_attendees = []
+    active_video_chat_group = ""
+    active_video_chat_attendee_processes = {}
+    print("Done closing group chat")
 
 
 def send_attendence_response_to_videochat_request(ip, groupname):
@@ -845,7 +835,6 @@ while choice != "q":
         while endCall != "c" and not call_started:
             print("Invalid answer, try again.")
             endCall = input("To cancel call, type 'c'.")
-
         if not call_started:
             send_cancel_call(person_ip)
             flash_messages.append("Call canceled.")
@@ -876,6 +865,7 @@ while choice != "q":
         start_call_in_three_seconds = False
         accepted_call_ip = will_be_called_person[1]
         send_accept_call(will_be_called_person[1])  # ip
+        print("Please wait..")
         time.sleep(3)
         if start_call_in_three_seconds:
             print("Video call starting... ")
@@ -898,10 +888,15 @@ while choice != "q":
             if gchoice == "c":
                 break
             if gchoice == "1":  # List of all groups
-                print("Syncing groups please wait 5 seconds..")
+                print("Syncing groups please wait 3 seconds..")
                 all_groups.clear()
                 send_allgroups_request()
-                time.sleep(5)
+                print("3")
+                time.sleep(1)
+                print("2")
+                time.sleep(1)
+                print("1")
+                time.sleep(1)
                 sync_groups()
                 for group in groups:
                     all_groups.add(group)
