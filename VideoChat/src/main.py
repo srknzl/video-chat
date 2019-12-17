@@ -299,7 +299,7 @@ def send_my_groups_to(ip, groups):
 
 def process_messages(data):
     decoded = data.decode("utf-8", errors="replace")
-    # print(decoded)
+    print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
@@ -550,9 +550,9 @@ def send_group_video_chat_leave(groupname):
         groupchatleave_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         groupchatleave_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
-        send_group_videostart_packet_once(groupchatleave_s, groupname)
-        send_group_videostart_packet_once(groupchatleave_s, groupname)
-        send_group_videostart_packet_once(groupchatleave_s, groupname)
+        send_group_video_chat_leave_packet_once(groupchatleave_s, groupname)
+        send_group_video_chat_leave_packet_once(groupchatleave_s, groupname)
+        send_group_video_chat_leave_packet_once(groupchatleave_s, groupname)
 
 
 def send_group_video_chat_leave_packet_once(groupchatleave_s, groupname):
