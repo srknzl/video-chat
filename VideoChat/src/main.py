@@ -368,14 +368,16 @@ def process_messages(data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
+            subprocess.run(["notify-send", name + " leaved the video chat."])
+
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
-                subprocess.run(["notify-send", name + " leaved the video chat."])
+                # subprocess.run(["notify-send", name + " leaved the video chat."])
                 if (name, ip) in active_video_chat_attendee_processes:
                     processes = active_video_chat_attendee_processes[(
                         name, ip)]
                     for process in processes:
-                        os.kill(process, signal.SIGKILL)
+                        kill(process, signal.SIGKILL)
                     del active_video_chat_attendee_processes[(name, ip)]
         elif message_type == "response_videochat_enter":
             name = decoded_splitted[0].strip(' ')

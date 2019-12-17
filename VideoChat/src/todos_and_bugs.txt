@@ -18,8 +18,8 @@ Todos:
 6- Group chat kendini iki kere açıyor.
 7- Enter leaveden önce bulunduğun groupları listele.
 8- Çıkarken haber verme.
-9- Kendi sesini render etme.
-10- 5 seconds waiting is too much. 
+* 9- Kendi sesini render etme.
+* 10- 5 seconds waiting is too much. 
 
 Bugs: 
  
