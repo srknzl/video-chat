@@ -360,6 +360,11 @@ def process_messages(data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
+            print("call_started",call_started)
+            print("active_video_chat_group",active_video_chat_group)
+            print("groupname", groupname)
+            print("active_video_chat_attendees",active_video_chat_attendees)
+            print("ip",ip, "userip",userip)
             if call_started and active_video_chat_group == groupname and (name,ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
@@ -368,11 +373,10 @@ def process_messages(data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
-            subprocess.run(["notify-send", name + " leaved the video chat."])
-
+            # subprocess.run(["notify-send", name + " leaved the video chat."])
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
-                # subprocess.run(["notify-send", name + " leaved the video chat."])
+                subprocess.run(["notify-send", name + " left the video chat."])
                 if (name, ip) in active_video_chat_attendee_processes:
                     processes = active_video_chat_attendee_processes[(
                         name, ip)]
