@@ -8,7 +8,6 @@ Video Chat Over Network Using Gstreamer
 * notify-send
 
 
-Note for gobject: Recent versions of PyGObject and its dependencies are packaged by nearly all major Linux distributions. So, if you use Linux, you can probably get started by installing the package from the official repository for your distribution.
 
 # Transporter- LAN video chat, text chat, file transfer application
 * Groups folder holds the currently attended groups. So please do not put a folder called groups near main.py. Otherwise, the script  
