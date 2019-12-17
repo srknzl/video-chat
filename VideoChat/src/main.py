@@ -362,7 +362,7 @@ def process_messages(data):
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
-            if active_video_chat_group == groupname and (name,ip) not in active_video_chat_attendees:
+            if active_video_chat_group == groupname and (name,ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
                 send_attendence_response_to_videochat_request(ip, groupname)
@@ -489,13 +489,17 @@ def start_video_chat(person_ip):
 
     print("Closing")
     call_started = False
-
+    try:
+        print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
+        os.kill(streamVideoProcessPid, signal.SIGTERM)
+        os.kill(streamAudioProcessPid, signal.SIGTERM)
+        os.kill(renderOwnVideoProcessPid, signal.SIGTERM)
+        os.kill(renderVideoProcessPid, signal.SIGTERM)
+        os.kill(renderAudioProcessPid, signal.SIGTERM)
+    except Exception as e:
+        print(e)
     # Kill gstreamer processes
-    os.kill(streamVideoProcessPid, signal.SIGTERM)
-    os.kill(streamAudioProcessPid, signal.SIGTERM)
-    os.kill(renderOwnVideoProcessPid, signal.SIGTERM)
-    os.kill(renderVideoProcessPid, signal.SIGTERM)
-    os.kill(renderAudioProcessPid, signal.SIGTERM)
+    
     print("Done closing")
     # streamVideoProcess.kill()
     # streamAudioProcess.kill()
@@ -630,8 +634,6 @@ def render_my_own_video_and_audio(flash_messages):
                 print("Killing",pid)
                 kill(pid, signal.SIGKILL)
         active_video_chat_attendees = []
-        print("active_video_chat_group",active_video_chat_group)
-        time.sleep(4)
         active_video_chat_group = ""
         active_video_chat_attendee_processes = {}
     except Exception as e:
