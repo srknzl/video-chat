@@ -704,7 +704,7 @@ clear()
 choice = None
 flash_messages = ["Welcome to the transporter app. Have fun! \n"]
 while choice != "q":
-    # clear()
+    clear()
     print(transporterLogo)
     if call_started:
         if active_video_chat_group != "":
