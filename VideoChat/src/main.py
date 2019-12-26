@@ -7,6 +7,8 @@ import subprocess
 import re
 import time
 import atexit
+from enum import Enum
+
 
 transporterLogo = """
  _____                                      _            
@@ -18,286 +20,234 @@ transporterLogo = """
 """
 
 
-def clear():
-    if name == 'nt':  # for windows
-        system('cls')
-    else:  # for mac and linux
-        system('clear')
+#! UDP SECTION
+
+class UdpMessageTypes(Enum):
+    announce = 1
+    allgroupsrequest = 2
+    groupvideochatstart = 3
+    groupvideochatleave = 4
+
+#! GENERAL UDP FUNCTION
 
 
-def print_options():
-    print("1. Send message")
-    print("2. Mailbox")
-    print("3. Online people")
-    print("4. Start video chat")
-    print("5. Pending video calls")
-    print("6. Manage Groups")
-    print("7. Send message to a group")
-    print("8. Attend video chat in a group")
-    print("9. See group video chats going on. ")
-    print("q. Quit")
+def send_udp_packet(packet_type, groupname):  # General udp packet sending function
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as udp_s:
+        udp_s.settimeout(0.2)
+        udp_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        udp_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        if packet_type == UdpMessageTypes.announce:
+            send_announce_packet(udp_s)
+            # time.sleep(1)
+            send_announce_packet(udp_s)
+            # time.sleep(1)
+            # send_announce_packet(udp_s)
+        elif packet_type == UdpMessageTypes.allgroupsrequest:
+            send_allgroups_req_packet(udp_s)
+            send_allgroups_req_packet(udp_s)
+            # send_allgroups_req_packet(udp_s)
+        elif packet_type == UdpMessageTypes.groupvideochatstart:
+            send_group_videochat_start_packet(udp_s, groupname)
+            send_group_videochat_start_packet(udp_s, groupname)
+            # send_group_videochat_start_packet(udp_s, groupname)
+        elif packet_type == UdpMessageTypes.groupvideochatleave:
+            send_group_videochat_leave_packet(udp_s, groupname)
+            send_group_videochat_leave_packet(udp_s, groupname)
+            # send_group_videochat_leave_packet(udp_s, groupname)
 
 
-def print_group_manage_options():
-    print("1. List of all groups")
-    print("2. List of groups I attended")
-    print("3. Enter a group")
-    print("4. Leave a group")
-    print("c. Cancel")
-
-
-def enter_group(groupname, flash_messages):  # Enter a group
-    sync_groups()
-    if not isAlphaNumeric(groupname):
-        flash_messages.append(
-            "EnterGroup: The groupname you entered is not alphanumeric.")
-    if groupname not in groups:
-        f = open("groups/" + groupname, "w+")
-        f.close()
-        flash_messages.append("EnterGroup: Entered group " + groupname)
-    else:
-        flash_messages.append("EnterGroup: You are already in this group")
-
-
-def leave_group(groupname, flash_messages):  # Leave a group
-    sync_groups()
-    if not isAlphaNumeric(groupname):
-        flash_messages.append(
-            "LeaveGroup: The groupname you entered is not alphanumeric.")
-        return
-    if groupname not in groups:
-        flash_messages.append("LeaveGroup: You are not in that group.")
-    else:
-        flash_messages.append("LeaveGroup: You left group " + groupname)
-        remove("groups/" + groupname)
-
-
-def print_groups(flash_messages):
-    if flash_messages != None:
-        if len(groups) != 0:
-            groups_string = ", ".join(groups)
-            flash_messages.append(
-                "Groups: You are in these groups: " + groups_string + "\n")
-        else:
-            flash_messages.append("Groups: You are not in any group")
-    else:
-        if len(groups) != 0:
-            groups_string = ", ".join(groups)
-            print("Groups: You are in these groups: " + groups_string + "\n")
-        else:
-            print("Groups: You are not in any group")
-
-
-def isAlphaNumeric(word):
-    if re.fullmatch("^[a-zA-Z0-9_]+$", word):
-        return True
-    else:
-        return False
-
-
-def sync_groups():
-    global groups
-    groups_isdir = path.isdir("groups")
-    groups_isfile = path.isfile("groups")
-    if groups_isfile:
-        remove("groups")
-        try:
-            mkdir("groups")
-        except OSError:
-            print("Creation of the directory 'groups' failed")
-            time.sleep(2)
-        else:
-            print("Successfully created the directory 'groups'")
-            time.sleep(2)
-    elif groups_isdir:
-        for (root, dirs, files) in walk("groups"):
-            for filename in files:
-                if filename == "c":  # Do not allow a group called 'c' as it is used as cancel character.
-                    files.remove(filename)
-            groups = list(filter(isAlphaNumeric, files))
-
-    else:
-        try:
-            mkdir("groups")
-        except OSError:
-            print("Creation of the directory 'groups' failed")
-            time.sleep(2)
-        else:
-            print("Successfully created the directory 'groups'")
-            time.sleep(2)
-
-
-def add_new_people(name, ip):
-    
-    found = False
-    for people in online_people:
-        if people[1] == ip:
-            found = True
-            # print("Found ", people, "to have ip ",ip)
-            if people[0] != name:
-                online_people.remove(people)
-                online_people.add((name, ip))
-                subprocess.run(
-                ["notify-send", "User with ip " + ip  +  " changed his name new name is " + name])
-
-    if not found and (name, ip) != (username, userip):
-        subprocess.run(
-            ["notify-send", "New person online: " + name + ", Ip: " + ip])
-        online_people.add((name, ip))
-
-
-def get_ip():
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        try:
-            # doesn't even have to be reachable
-            s.connect(('10.255.255.255', 1))
-            IP = s.getsockname()[0]
-        except:
-            IP = '127.0.0.1'
-            print("You are not connected to a network chat application will not work.")
-    return IP
-
-
-def send_announce():
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as announce_s:
-        announce_s.settimeout(0.2)
-        announce_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        announce_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-        send_announce_packet_once(announce_s)
-        time.sleep(1)
-        send_announce_packet_once(announce_s)
-        time.sleep(1)
-        send_announce_packet_once(announce_s)
-
-
-def send_announce_packet_once(announce_socket):
+# Send announce to everyone when logging in, via udp
+def send_announce_packet(socket):
     try:
-        announce_socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
+        socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting", e)
         time.sleep(1)
 
 
-def send_response(ip):
-    # print("Send response to",ip)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as response_s:
-        try:
-            response_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            response_s.connect((ip, 12345))
-            response_s.sendall(("[" + str(username) + ", " + str(userip) +
-                                ", response]").encode("utf-8", errors="replace"))
-            response_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when responding to an announce message", e)
-            time.sleep(1)
-
-
-def send_message(ip, payload):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as message_s:
-        try:
-            message_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            message_s.connect((ip, 12345))
-            message_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", message, " + str(payload) + "]").encode("utf-8", errors="replace"))
-            message_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when message is sending", e)
-            time.sleep(1)
-
-
-def send_call(ip):  # Call request
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as call_s:
-        try:
-            call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            call_s.connect((ip, 12345))
-            call_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", call]").encode("utf-8", errors="replace"))
-            call_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when sending call message", e)
-            time.sleep(1)
-
-
-def send_accept_call(ip):  # Ok to call request, sent after getting a call
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as accept_call_s:
-        try:
-            accept_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            accept_call_s.connect((ip, 12345))
-            accept_call_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", acceptcall]").encode("utf-8", errors="replace"))
-            accept_call_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when sending accept call message", e)
-            time.sleep(1)
-
-
-def send_start_call(ip):  # Starting response, sent after call is accepted by other party
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as start_call_s:
-        try:
-            start_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            start_call_s.connect((ip, 12345))
-            start_call_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", startcall]").encode("utf-8", errors="replace"))
-            start_call_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when sending start call message", e)
-            time.sleep(1)
-
-
-def send_cancel_call(ip):  # Sent when 1-1 call is canceled
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cancel_call_s:
-        try:
-            cancel_call_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            cancel_call_s.connect((ip, 12345))
-            cancel_call_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", cancelcall]").encode("utf-8", errors="replace"))
-            cancel_call_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when sending cancel call message", e)
-            time.sleep(1)
-
-
-def send_allgroups_request():
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as allgroups_s:
-        allgroups_s.settimeout(0.2)
-        allgroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        allgroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-        send_allgroups_req_packet_once(allgroups_s)
-        send_allgroups_req_packet_once(allgroups_s)
-        send_allgroups_req_packet_once(allgroups_s)
-
-
-def send_allgroups_req_packet_once(allgroups_socket):
+# Send allgroups request to everyone, everyone send all their groups as reply, via udp
+def send_allgroups_req_packet(socket):
     try:
-        allgroups_socket.sendto(("[" + str(username) + ", " + str(userip) + ", allgroups]").encode(
+        socket.sendto(("[" + str(username) + ", " + str(userip) + ", allgroups]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting all groups request", e)
         time.sleep(1)
 
 
-def send_my_groups_to(ip, groups):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as mygroups_s:
-        try:
-            mygroups_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            mygroups_s.connect((ip, 12345))
-            if len(groups) == 0:
-                mygroups_s.sendall(
-                    ("[" + str(username) + ", " + str(userip) + ", mygroups]").encode("utf-8", errors="replace"))
-            else:
-                mygroups_string = ", ".join(groups)
-                mygroups_s.sendall(
-                    ("[" + str(username) + ", " + str(userip) + ", mygroups, " + mygroups_string + "]").encode("utf-8", errors="replace"))
-            mygroups_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("An error occured when sending my groups", e)
-            time.sleep(1)
+# Send everyone that I am starting a videochat in group 'groupname'
+def send_group_videochat_start_packet(socket, groupname):
+    try:
+        socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_enter, " + str(groupname) + "]").encode(
+            "utf-8", errors="replace"), ('<broadcast>', 12345))
+    except Exception as e:
+        print("An error occured when broadcasting video start message", e)
+        time.sleep(1)
 
 
-def process_messages(data):
+# Send everyone that I am leaving a videochat in group 'groupname'
+def send_group_videochat_leave_packet(socket, groupname):
+    try:
+        socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_leave, " + str(groupname) + "]").encode(
+            "utf-8", errors="replace"), ('<broadcast>', 12345))
+    except Exception as e:
+        print("An error occured when broadcasting video start message", e)
+        time.sleep(1)
+#! END OF UDP SECTION
+
+#! TCP SECTION
+
+
+class TcpMessageTypes(Enum):
+    response = 1
+    message = 2
+    call = 3
+    acceptcall = 4
+    startcall = 5
+    cancelcall = 6
+    mygroups = 7
+    responsegroupchatenter = 8
+
+#! GENERAL TCP FUNCTION
+
+
+# General tcp packet sending function
+def send_tcp_packet(packet_type, ip, payload, groups, groupname):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_s:
+        if packet_type == TcpMessageTypes.response:
+            send_response_packet(tcp_s, ip)
+        elif packet_type == TcpMessageTypes.message:
+            send_message_packet(tcp_s, ip, payload)
+        elif packet_type == TcpMessageTypes.call:
+            send_call_packet(tcp_s, ip)
+        elif packet_type == TcpMessageTypes.acceptcall:
+            send_accept_call_packet(tcp_s, ip)
+        elif packet_type == TcpMessageTypes.startcall:
+            send_start_call_packet(tcp_s, ip)
+        elif packet_type == TcpMessageTypes.cancelcall:
+            send_cancel_call_packet(tcp_s, ip)
+        elif packet_type == TcpMessageTypes.mygroups:
+            send_my_groups_packet(tcp_s, ip, groups)
+        elif packet_type == TcpMessageTypes.responsegroupchatenter:
+            send_response_videochat_enter_packet(tcp_s, ip, groupname)
+
+
+# Send response message to a user with ip 'ip', via tcp
+def send_response_packet(socket, ip):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(("[" + str(username) + ", " + str(userip) +
+                        ", response]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when responding to an announce message", e)
+        time.sleep(1)
+
+
+# Send message 'payload' to a user with ip 'ip', via tcp
+def send_message_packet(socket, ip, payload):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", message, " + str(payload) + "]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when message is sending", e)
+        time.sleep(1)
+
+
+# Send call request message to a user with ip 'ip', via tcp
+def send_call_packet(socket, ip):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", call]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when sending call message", e)
+        time.sleep(1)
+
+
+# Send ok message to a call request, sent after getting a call to a user with ip 'ip', via tcp
+def send_accept_call_packet(socket, ip):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", acceptcall]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when sending accept call message", e)
+        time.sleep(1)
+
+
+# Starting response, sent after call is accepted by other party, to a user with ip 'ip', via tcp
+def send_start_call_packet(socket, ip):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", startcall]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when sending start call message", e)
+        time.sleep(1)
+
+
+# Sent when 1-1 call is canceled, to a user with ip 'ip', via tcp
+def send_cancel_call_packet(socket, ip):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", cancelcall]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when sending cancel call message", e)
+        time.sleep(1)
+
+
+# Send my groups 'groups' to a person that has requested my groups with ip 'ip', via tcp
+def send_my_groups_packet(socket, ip, groups):
+    try:
+        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        if len(groups) == 0:
+            socket.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", mygroups]").encode("utf-8", errors="replace"))
+        else:
+            mygroups_string = ", ".join(groups)
+            socket.sendall(
+                ("[" + str(username) + ", " + str(userip) + ", mygroups, " + mygroups_string + "]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print("An error occured when sending my groups", e)
+        time.sleep(1)
+
+
+def send_response_videochat_enter_packet(socket, ip, groupname):
+    try:
+        socket.setsockopt(
+            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", response_videochat_enter, " + str(groupname) + "]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print(
+            "An error occured when sending videochat attendence info to someoone", e)
+        time.sleep(1)
+
+#! END OF TCP SECTION
+
+#! Communication related
+
+
+def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
     print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
@@ -365,10 +315,10 @@ def process_messages(data):
             # print("groupname", groupname)
             # print("active_video_chat_attendees",active_video_chat_attendees)
             # print("ip",ip, "userip",userip)
-            if call_started and active_video_chat_group == groupname and (name,ip) not in active_video_chat_attendees and ip != userip:
+            if call_started and active_video_chat_group == groupname and (name, ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
-                send_attendence_response_to_videochat_request(ip, groupname)
+                send_response_videochat_enter_packet(ip, groupname)
         elif message_type == "announce_videochat_leave":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -413,17 +363,17 @@ def process_messages(data):
         print("Got an invalid message " + str(decode))
 
 
-def listen_messages():
+def listen_tcp_messages():  # Open a tcp socket and wait, every new connection is handled via a new thread submission to executor pool
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((get_ip(), 12345))
         sock.listen()
         while True:
             conn, addr = sock.accept()
-            executor.submit(on_new_connection, conn, addr)
+            executor.submit(on_new_tcp_connection, conn, addr)
 
 
-def listen_udp_messages():
+def listen_udp_messages():  # Open a udp socket and wait, every new connection is handled via a new thread submission to executor pool
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -434,7 +384,8 @@ def listen_udp_messages():
             executor.submit(on_new_udp_connection, data, addr)
 
 
-def on_new_connection(conn, addr):
+# Reads data from tcp connection than sends data to process_messages
+def on_new_tcp_connection(conn, addr):
     with conn:
         data = conn.recv(1500)
         if data:
@@ -442,13 +393,38 @@ def on_new_connection(conn, addr):
             process_messages(data)
 
 
+# Reads data from udp connection than sends data to process_messages
 def on_new_udp_connection(data, addr):
     if addr != (userip, 12345):
         # time.sleep(0.1)
         process_messages(data)
 
 
-def start_video_chat(person_ip):
+def add_new_people(name, ip):  # When a response or announce comes, this is called
+    found = False
+    for people in online_people:
+        # If there is a person with same ip, username is changed.
+        if people[1] == ip:
+            found = True
+            # print("Found ", people, "to have ip ",ip)
+            if people[0] != name:
+                # Remove old person with old username
+                online_people.remove(people)
+                # Add a new person with new username
+                online_people.add((name, ip))
+                subprocess.run(
+                    ["notify-send", "User with ip " + ip + " changed his name new name is " + name])
+
+    # If no one is found with the same ip and the new people is not me, add it to online people
+    if not found and (name, ip) != (username, userip):
+        subprocess.run(
+            ["notify-send", "New person online: " + name + ", Ip: " + ip])
+        online_people.add((name, ip))
+
+
+#! Video chat related
+
+def start_video_chat(person_ip):  # Start video chat with a person with ip 'person_ip'
     global call_started
     call_started = True
     person_ip_splitted = person_ip.split(".")
@@ -460,12 +436,14 @@ def start_video_chat(person_ip):
     own_ip = "234." + str(user_ip_splitted[1]) + "." + str(
         user_ip_splitted[2]) + "." + str(user_ip_splitted[3])
 
-    subprocess.run(["killall", "-9", "gst-launch-1.0"],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
+    subprocess.run(["killall", "-9", "gst-launch-1.0"],  # Kill any other remaining gstreamer instances if any
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    # Stream own video and audio, render own video, render audio and video of friend
+    # Multicast ip is used 234. + last part of the ip
     streamVideoProcess = subprocess.Popen(
         ["bash", "streamVideo.sh", own_ip, "40000"], stdout=subprocess.PIPE)
     outs, errs = streamVideoProcess.communicate()
+    # These pid's are used to kill gstreamer processes later on
     streamVideoProcessPid = int(outs.decode())
 
     streamAudioProcess = subprocess.Popen(
@@ -503,16 +481,18 @@ def start_video_chat(person_ip):
     kill(renderOwnVideoProcessPid, signal.SIGTERM)
     kill(renderVideoProcessPid, signal.SIGTERM)
     kill(renderAudioProcessPid, signal.SIGTERM)
-    
-    print("Done closing")
-    
 
-def render_video_chat(name, ip): # Render other group members' video audio and add to attendees object 
+    print("Done closing")
+
+
+# Render other group members' video audio and add to attendees object
+def render_video_chat(name, ip):
     global active_video_chat_attendee_processes
     person_ip_splitted = ip.split(".")
     friend_ip = "234." + str(person_ip_splitted[1]) + "." + str(
         person_ip_splitted[2]) + "." + str(person_ip_splitted[3])
-
+    # Render audio and video of friend
+    # Multicast ip is used 234. + last part of the ip
     renderVideoProcess = subprocess.Popen(
         ["bash", "renderVideo.sh", friend_ip, "40000"], stdout=subprocess.PIPE)
     outs, errs = renderVideoProcess.communicate()
@@ -523,72 +503,36 @@ def render_video_chat(name, ip): # Render other group members' video audio and a
     outs, errs = renderAudioProcess.communicate()
     renderAudioProcessPid = int(outs.decode())
 
+    # Add the new person to process list to be killed when group chat ends.
     if (name, ip) not in active_video_chat_attendee_processes:
         active_video_chat_attendee_processes[(name, ip)] = [
             renderVideoProcessPid, renderAudioProcessPid]
 
 
-def send_group_videochat_start(groupname):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as groupchatstart_s:
-        groupchatstart_s.settimeout(0.2)
-        groupchatstart_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        groupchatstart_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-        send_group_videostart_packet_once(groupchatstart_s, groupname)
-        send_group_videostart_packet_once(groupchatstart_s, groupname)
-        send_group_videostart_packet_once(groupchatstart_s, groupname)
-
-
-def send_group_videostart_packet_once(groupchatstart_s, groupname):
-    try:
-        groupchatstart_s.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_enter, " + str(groupname) + "]").encode(
-            "utf-8", errors="replace"), ('<broadcast>', 12345))
-    except Exception as e:
-        print("An error occured when broadcasting video start message", e)
-        time.sleep(1)
-
-
-def send_group_video_chat_leave(groupname):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as groupchatleave_s:
-        groupchatleave_s.settimeout(0.2)
-        groupchatleave_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        groupchatleave_s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-
-        send_group_video_chat_leave_packet_once(groupchatleave_s, groupname)
-        send_group_video_chat_leave_packet_once(groupchatleave_s, groupname)
-        send_group_video_chat_leave_packet_once(groupchatleave_s, groupname)
-
-
-def send_group_video_chat_leave_packet_once(groupchatleave_s, groupname):
-    try:
-        groupchatleave_s.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_leave, " + str(groupname) + "]").encode(
-            "utf-8", errors="replace"), ('<broadcast>', 12345))
-    except Exception as e:
-        print("An error occured when broadcasting video start message", e)
-        time.sleep(1)
-
-
-def start_group_video_chat(groupname, flash_messages):
+def start_group_video_chat(groupname, flash_messages):  # Starts group video chat
     global active_video_chat_attendees, active_video_chat_group, call_started
     if groupname not in groups:
         print("GroupChat: You are not in group", groupname)
         sync_groups()
         print_groups(None)
         return False
-    subprocess.run(["killall", "-9", "gst-launch-1.0"],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    subprocess.run(["killall", "-9", "gst-launch-1.0"],  # Kill any running gstreamer in the background
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     call_started = True
-    active_video_chat_attendees = []
-    active_video_chat_group = groupname
-    executor.submit(render_my_own_video_and_audio, flash_messages)
+    active_video_chat_attendees = []  # Reset attendees
+    active_video_chat_group = groupname  # Set current group chat group name
+    # Render my own video, also stream my video and audio
+    executor.submit(prepare_me_to_groupchat, flash_messages)
+    # Announce that I am started video chat
     send_group_videochat_start(groupname)
     return True
 
 
-def render_my_own_video_and_audio(flash_messages):
+# Render my own video, also stream my video and audio
+def prepare_me_to_groupchat(flash_messages):
     global active_video_chat_attendees, active_video_chat_attendee_processes, active_video_chat_group, call_started
     call_started = True
-    
+
     user_ip_splitted = userip.split(".")
 
     own_ip = "234." + str(user_ip_splitted[1]) + "." + str(
@@ -603,12 +547,11 @@ def render_my_own_video_and_audio(flash_messages):
         ["bash", "streamAudio.sh", own_ip, "50000"], stdout=subprocess.PIPE)
     outs, errs = streamAudioProcess.communicate()
     streamAudioProcessPid = int(outs.decode())
-    
+
     renderOwnVideoProcess = subprocess.Popen(
         ["bash", "renderVideo.sh", own_ip, "40000"], stdout=subprocess.PIPE)
     outs, errs = renderOwnVideoProcess.communicate()
     renderOwnVideoProcessPid = int(outs.decode())
-
 
     flash_messages.append("Group video chat started...")
 
@@ -633,57 +576,174 @@ def render_my_own_video_and_audio(flash_messages):
     active_video_chat_attendee_processes = {}
     print("Done closing group chat")
 
+#! Groups related
 
-def send_attendence_response_to_videochat_request(ip, groupname):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as send_attendence_groupchat_s:
+
+def enter_group(groupname, flash_messages):  # Enter a group
+    sync_groups()
+    if not isAlphaNumeric(groupname):
+        flash_messages.append(
+            "EnterGroup: The groupname you entered is not alphanumeric.")
+    if groupname not in groups:
+        f = open("groups/" + groupname, "w+")
+        f.close()
+        flash_messages.append("EnterGroup: Entered group " + groupname)
+    else:
+        flash_messages.append("EnterGroup: You are already in this group")
+
+
+def leave_group(groupname, flash_messages):  # Leave a group
+    sync_groups()
+    if not isAlphaNumeric(groupname):
+        flash_messages.append(
+            "LeaveGroup: The groupname you entered is not alphanumeric.")
+        return
+    if groupname not in groups:
+        flash_messages.append("LeaveGroup: You are not in that group.")
+    else:
+        flash_messages.append("LeaveGroup: You left group " + groupname)
+        remove("groups/" + groupname)
+
+
+# Print groups if flash_messages is None, else put it inside flash messages
+def print_groups(flash_messages):
+    if flash_messages != None:
+        if len(groups) != 0:
+            groups_string = ", ".join(groups)
+            flash_messages.append(
+                "Groups: You are in these groups: " + groups_string + "\n")
+        else:
+            flash_messages.append("Groups: You are not in any group")
+    else:
+        if len(groups) != 0:
+            groups_string = ", ".join(groups)
+            print("Groups: You are in these groups: " + groups_string + "\n")
+        else:
+            print("Groups: You are not in any group")
+
+
+def sync_groups():  # Update groups from groups folder
+    global groups
+    groups_isdir = path.isdir("groups")
+    groups_isfile = path.isfile("groups")
+    if groups_isfile:
+        remove("groups")
         try:
-            send_attendence_groupchat_s.setsockopt(
-                socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            send_attendence_groupchat_s.connect((ip, 12345))
-            send_attendence_groupchat_s.sendall(
-                ("[" + str(username) + ", " + str(userip) + ", response_videochat_enter, " + str(groupname) + "]").encode("utf-8", errors="replace"))
-            send_attendence_groupchat_s.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print(
-                "An error occured when sending videochat attendence info to someoone", e)
-            time.sleep(1)
+            mkdir("groups")
+        except OSError:
+            print("Creation of the directory 'groups' failed")
+            time.sleep(2)
+        else:
+            print("Successfully created the directory 'groups'")
+            time.sleep(2)
+    elif groups_isdir:
+        for (root, dirs, files) in walk("groups"):
+            for filename in files:
+                if filename == "c":  # Do not allow a group called 'c' as it is used as cancel character.
+                    files.remove(filename)
+            groups = list(filter(isAlphaNumeric, files))
+
+    else:
+        try:
+            mkdir("groups")
+        except OSError:
+            print("Creation of the directory 'groups' failed")
+            time.sleep(2)
+        else:
+            print("Successfully created the directory 'groups'")
+            time.sleep(2)
 
 
-def cleanup():
+#! Misc functions
+
+def on_exit():  # Kill all gstreamer instances when exiting
     subprocess.run(["killall", "-9", "gst-launch-1.0"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-#!Main
+
+def clear():  # Clear terminal
+    if name == 'nt':  # for windows
+        system('cls')
+    else:  # for mac and linux
+        system('clear')
+
+
+def print_options():  # Print main menu
+    print("1. Send message")
+    print("2. Mailbox")
+    print("3. Online people")
+    print("4. Start video chat")
+    print("5. Pending video calls")
+    print("6. Manage Groups")
+    print("7. Send message to a group")
+    print("8. Attend video chat in a group")
+    print("9. See group video chats going on. ")
+    print("q. Quit")
+
+
+def print_group_manage_options():  # Manage Group Options
+    print("1. List of all groups")
+    print("2. List of groups I attended")
+    print("3. Enter a group")
+    print("4. Leave a group")
+    print("c. Cancel")
+
+
+def isAlphaNumeric(word):  # Filter function that checks if a word is alphanumeric
+    # Used to ensure group names do not cause problems when sending them in the protocol messages
+    if re.fullmatch("^[a-zA-Z0-9_]+$", word):
+        return True
+    else:
+        return False
+
+
+def get_ip():  # Get my ip in the network, tries to connect to an address via a socket, with that acquires the ip.
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except:
+            IP = '127.0.0.1'
+            print("You are not connected to a network chat application will not work.")
+    return IP
+
+
+def init(): # Starts tcp and udp listeners, starts announcer thread, registers on exit function
+    tcplistener = threading.Thread(target=listen_tcp_messages, daemon=True)
+    tcplistener.start()
+
+    udplistener = threading.Thread(target=listen_udp_messages, daemon=True)
+    udplistener.start()
+
+    announcer = threading.Thread(target=send_udp_packet, args=(
+        UdpMessageTypes.announce), daemon=True)
+    announcer.start()
+    atexit.register(on_exit)
+
+
+def choose_a_username(): # Requires user to choose a username
+    while not username:
+    print("Please enter a name!")
+    username = input("What is your name? \n")
+
+#! Main Code
+
+#! Global vars
 messages = {}
 sent_messages = {}
-
 
 calls = []
 start_call_in_three_seconds = False
 accepted_call_ip = ""
 call_started = False
 
-
 online_people = set()
 # online_people.add(("serkan", "192.168.43.224"))
 username = input("What is your name? \n")
 userip = get_ip()
 
-tcplistener = threading.Thread(target=listen_messages, daemon=True)
-tcplistener.start()
-
-udplistener = threading.Thread(target=listen_udp_messages, daemon=True)
-udplistener.start()
-
-
 executor = ThreadPoolExecutor(255)
-
-announcer = threading.Thread(target=send_announce, daemon=True)
-announcer.start()
-
-while not username:
-    print("Please enter a name!")
-    username = input("What is your name? \n")
 
 all_groups = set()
 groups = []
@@ -691,11 +751,14 @@ active_video_chat_group = ""
 active_video_chat_attendees = []
 active_video_chat_attendee_processes = {}
 
+#! Init code
+
+init() # Starts tcp and udp listeners, execute announcer thread, registers on exit function
+choose_a_username() # Choose a username
 sync_groups()
 
-atexit.register(cleanup)
+#! Main loop 
 
-clear()
 choice = None
 flash_messages = ["Welcome to the transporter app. Have fun! \n"]
 while choice != "q":
