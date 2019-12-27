@@ -504,7 +504,7 @@ def add_new_people(name, ip):  # When a response or announce comes, this is call
 #! Video chat related
 
 def start_video_chat(person_ip):  # Start video chat with a person with ip 'person_ip'
-    global call_started, close_video_chat
+    global call_started, close_video_chat, active_video_chat_friend_ip
     call_started = True
     active_video_chat_friend_ip = person_ip
     person_ip_splitted = person_ip.split(".")
