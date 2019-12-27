@@ -616,15 +616,16 @@ def launch_group_chat():
                     groupname=active_video_chat_group)
     call_started = False
     active_video_chat_group = ""
-
-    kill(streamVideoProcessPid, signal.SIGKILL)
-    kill(streamAudioProcessPid, signal.SIGKILL)
-    kill(renderOwnVideoProcessPid, signal.SIGKILL)
-    for user_entry in active_video_chat_attendee_processes:
-        processes = active_video_chat_attendee_processes[user_entry]
-        for pid in processes:
-            # print("Killing",pid)
-            kill(pid, signal.SIGKILL)
+    try:
+        kill(streamVideoProcessPid, signal.SIGKILL)
+        kill(streamAudioProcessPid, signal.SIGKILL)
+        kill(renderOwnVideoProcessPid, signal.SIGKILL)
+        for user_entry in active_video_chat_attendee_processes:
+            processes = active_video_chat_attendee_processes[user_entry]
+            for pid in processes:
+                kill(pid, signal.SIGKILL)
+    except Exception:
+        pass
     active_video_chat_attendees = []
     active_video_chat_attendee_processes = {}
     print("Done closing group chat")
