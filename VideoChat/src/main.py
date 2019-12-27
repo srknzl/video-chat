@@ -285,6 +285,7 @@ def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
     print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
+        global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
         if len(decoded_splitted) < 3:
@@ -318,7 +319,6 @@ def process_messages(data):  # Process incoming data
             send_tcp_packet(packet_type=TcpMessageTypes.startcall, ip=ip)
             start_video_chat(ip)
         elif message_type == 'startcall':
-            global start_call_in_three_seconds
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             if ip == accepted_call_ip:
@@ -345,6 +345,7 @@ def process_messages(data):  # Process incoming data
                 group = decoded_splitted[i].strip(' ')
                 all_groups.add(group)
         elif message_type == "announce_videochat_enter":
+
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
@@ -353,6 +354,11 @@ def process_messages(data):  # Process incoming data
             # print("groupname", groupname)
             # print("active_video_chat_attendees",active_video_chat_attendees)
             # print("ip",ip, "userip",userip)
+            if groupname not in ongoing_group_video_chats:
+                ongoing_group_video_chats[groupname] = [(name, ip)]
+            else:
+                ongoing_group_video_chats[groupname].append((name, ip))
+
             if call_started and active_video_chat_group == groupname and (name, ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
@@ -363,6 +369,13 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
             # subprocess.run(["notify-send", name + " leaved the video chat."])
+
+            if groupname in ongoing_group_video_chats:
+                try:
+                    ongoing_group_video_chats[groupname].remove((nama, ip))
+                except ValueError:
+                    pass
+
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
                 subprocess.run(["notify-send", name + " left the video chat."])
@@ -376,6 +389,12 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
+
+            if groupname not in ongoing_group_video_chats:
+                ongoing_group_video_chats[groupname] = [(name, ip)]
+            else:
+                ongoing_group_video_chats[groupname].append((name, ip))
+
             if active_video_chat_group != "" and call_started and groupname == active_video_chat_group and (name, ip) not in active_video_chat_attendees:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
@@ -398,12 +417,11 @@ def process_messages(data):  # Process incoming data
         elif message_type == "general_leave":
             ip = decoded_splitted[1].strip(' ')
             for person in online_people:
-                if person[1] == ip: # Delete the person
+                if person[1] == ip:  # Delete the person
                     subprocess.run(
-                    ["notify-send", person[0] + " with ip " + person[1] + " has left the application."])
+                        ["notify-send", person[0] + " with ip " + person[1] + " has left the application."])
                     online_people.remove(person)
         elif message_type == "videochatleave":
-            global close_video_chat
             ip = decoded_splitted[1].strip(' ')
             if active_video_chat_friend_ip == ip:
                 close_video_chat = True
@@ -425,7 +443,6 @@ def listen_tcp_messages():  # Open a tcp socket and wait, every new connection i
                 executor.submit(on_new_tcp_connection, conn, addr)
     except Exception:
         pass
-    
 
 
 def listen_udp_messages():  # Open a udp socket and wait, every new connection is handled via a new thread submission to executor pool
@@ -440,7 +457,6 @@ def listen_udp_messages():  # Open a udp socket and wait, every new connection i
                 executor.submit(on_new_udp_connection, data, addr)
     except Exception:
         pass
-    
 
 
 # Reads data from tcp connection than sends data to process_messages
@@ -826,6 +842,9 @@ active_video_chat_attendee_processes = {}
 
 # For 1-1 video chat, leaving cause killing of video and audio rendering of the leaving person.
 active_video_chat_friend_ip = ""
+
+# Group video chats going on, groupname->array of person
+ongoing_group_video_chats = {}
 #! Init code
 
 choose_a_username()  # Choose a username
