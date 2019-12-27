@@ -58,6 +58,8 @@ def send_udp_packet(packet_type, groupname=""):  # General udp packet sending fu
         elif packet_type == UdpMessageTypes.generalleave:
             send_general_leave(udp_s)
             send_general_leave(udp_s)
+        else:
+            print("Invalid udp message type", packet_type)
 
 
 # Send announce to everyone when logging in, via udp
@@ -147,6 +149,8 @@ def send_tcp_packet(packet_type, ip=None, payload=None, groups=None, groupname=N
             send_response_videochat_enter_packet(tcp_s, ip, groupname)
         elif packet_type == TcpMessageTypes.videochatleave:
             send_videochat_leave(tcp_s, ip)
+        else:
+            print("Invalid tcp message type", packet_type)
 
 
 # Send response message to a user with ip 'ip', via tcp
@@ -279,7 +283,7 @@ def send_videochat_leave(socket, ip):
 
 def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
-    # print(decoded)
+    print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
@@ -292,10 +296,10 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             add_new_people(name, ip)
             if ip != userip:
-                executor.submit(send_tcp_packet, kwargs={
-                    packet_type: TcpMessageTypes.response
-                    ip: ip
-                })
+                executor.submit(send_tcp_packet, 
+                    packet_type=TcpMessageTypes.response,
+                    ip=ip
+                )
         elif message_type == 'response':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -768,8 +772,8 @@ def init():  # Starts tcp and udp listeners, starts announcer thread, registers 
     udplistener = threading.Thread(target=listen_udp_messages, daemon=True)
     udplistener.start()
 
-    announcer = threading.Thread(target=send_udp_packet, kwargs == {
-        packet_type=UdpMessageTypes.announce
+    announcer = threading.Thread(target=send_udp_packet, kwargs={
+        "packet_type":UdpMessageTypes.announce
     }, daemon=True)
     announcer.start()
     atexit.register(on_exit)
@@ -812,8 +816,8 @@ active_video_chat_attendee_processes = {}
 active_video_chat_friend_ip = ""
 #! Init code
 
-init()  # Starts tcp and udp listeners, execute announcer thread, registers on exit function
 choose_a_username()  # Choose a username
+init()  # Starts tcp and udp listeners, execute announcer thread, registers on exit function
 sync_groups()
 
 #! Main loop
@@ -869,11 +873,11 @@ while choice != "q":
             sent_messages[person_cho].append(message)
         else:
             sent_messages[person_cho] = [message]
-        executor.submit(send_tcp_packet, kwargs={
-            packet_type: TcpMessageTypes.message,
-            ip: person_ip,
-            payload: message
-        })
+        executor.submit(send_tcp_packet,
+            packet_type=TcpMessageTypes.message,
+            ip=person_ip,
+            payload=message
+        )
         print("Message sent! \n")
 
         while True:
@@ -887,11 +891,11 @@ while choice != "q":
                     sent_messages[person_cho].append(message)
                 else:
                     sent_messages[person_cho] = [message]
-                executor.submit(send_tcp_packet, kwargs={
-                    packet_type: TcpMessageTypes.message,
-                    ip: person_ip,
-                    payload: message
-                })
+                executor.submit(send_tcp_packet,
+                    packet_type=TcpMessageTypes.message,
+                    ip=person_ip,
+                    payload=message
+                )
                 print("Message sent! \n")
             elif sendAgain.capitalize() == "N":
                 break
