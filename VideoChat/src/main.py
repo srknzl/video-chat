@@ -285,7 +285,7 @@ def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
     print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
-        global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat
+        global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat, active_video_chat_friend_ip
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
         if len(decoded_splitted) < 3:
@@ -423,8 +423,9 @@ def process_messages(data):  # Process incoming data
                     subprocess.run(
                         ["notify-send", person[0] + " with ip " + person[1] + " has left the application."])
                     online_people.remove(person)
-        elif message_type == "videochatleave":
+        elif message_type == "videochat_leave":
             ip = decoded_splitted[1].strip(' ')
+            print("ip:"+ip, "active_video_chat_friend_ip" + active_video_chat_friend_ip)
             if active_video_chat_friend_ip == ip:
                 close_video_chat = True
                 active_video_chat_friend_ip == ""
