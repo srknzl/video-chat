@@ -427,6 +427,7 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             if active_video_chat_friend_ip == ip:
                 close_video_chat = True
+                active_video_chat_friend_ip == ""
         else:
             print("Got an invalid message " + str(decode))
 
@@ -549,11 +550,16 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
     inp = input("Press c to close video chat")
     while inp != "c" and not close_video_chat:
         inp = input("Press c to close video chat")
-    close_video_chat = False
     print("Closing")
+    close_video_chat = False
     call_started = False
+
+    if active_video_chat_friend_ip != "":
+        send_tcp_packet(packet_type=TcpMessageTypes.videochatleave,
+                        ip=active_video_chat_friend_ip)
+
     active_video_chat_friend_ip = ""
-    # print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
+
     # Kill gstreamer processes
     try:
         kill(streamVideoProcessPid, signal.SIGTERM)
@@ -1126,12 +1132,14 @@ while choice != "q":
                 packet_type=UdpMessageTypes.groupvideochatstart, groupname=group)
             # Render my own video, also stream my video and audio
             launch_group_chat()
-        elif choice == "8": 
+        elif choice == "8":
             for group in ongoing_group_video_chats:
-                flash_messages.append("There is a video chat going on in group " + group)
+                flash_messages.append(
+                    "There is a video chat going on in group " + group)
                 flash_messages.append("Attendees: \n")
                 for person in ongoing_group_video_chats[group]:
-                    flash_messages.append("Name: " + person[0] + ", Ip: " + person[1])
+                    flash_messages.append(
+                        "Name: " + person[0] + ", Ip: " + person[1])
         elif choice == "9":  # ! testing purposes
             clear()
             print("------------------Testing------------------ \n\n")
