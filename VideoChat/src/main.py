@@ -426,10 +426,9 @@ def process_messages(data):  # Process incoming data
         elif message_type == "videochat_leave":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            print("ip:"+ip, "active_video_chat_friend_ip" + active_video_chat_friend_ip)
             if active_video_chat_friend_ip == ip:
                 close_video_chat = True
-                active_video_chat_friend_ip == ""
+                active_video_chat_friend_ip = ""
                 try:
                     kill(videochat_pids[0], signal.SIGTERM)
                     kill(videochat_pids[1], signal.SIGTERM)
