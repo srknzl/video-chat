@@ -572,6 +572,12 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
         pass
 
     print("Done closing")
+    clear()
+    print(transporterLogo)
+    for f_message in flash_messages:
+        print(f_message)
+    flash_messages.clear()
+    print_options()
 
 
 # Render other group members' video audio and add to attendees object
