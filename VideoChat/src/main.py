@@ -58,7 +58,7 @@ def send_udp_packet(packet_type, groupname=""):  # General udp packet sending fu
         elif packet_type == UdpMessageTypes.generalleave:
             send_general_leave(udp_s)
             send_general_leave(udp_s)
-        
+
 
 # Send announce to everyone when logging in, via udp
 def send_announce_packet(socket):
@@ -100,13 +100,13 @@ def send_group_videochat_leave_packet(socket, groupname):
         time.sleep(1)
 
 
-def send_general_leave(socket): # Send to everyone that I am leaving the application
+def send_general_leave(socket):  # Send to everyone that I am leaving the application
     try:
         socket.sendto(("[" + str(username) + ", " + str(userip) + ", general_leave]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting general leave message", e)
-        time.sleep(1)    
+        time.sleep(1)
 
 
 #! TCP SECTION
@@ -245,7 +245,8 @@ def send_my_groups_packet(socket, ip, groups):
         time.sleep(1)
 
 
-def send_response_videochat_enter_packet(socket, ip, groupname): # Send to the newly entered person to the group chat in order he or she to know who are already group chatting  
+# Send to the newly entered person to the group chat in order he or she to know who are already group chatting
+def send_response_videochat_enter_packet(socket, ip, groupname):
     try:
         socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -259,7 +260,8 @@ def send_response_videochat_enter_packet(socket, ip, groupname): # Send to the n
         time.sleep(1)
 
 
-def send_videochat_leave(socket, ip): # Send to the person I am currently having video chat with, to make kill his or her render processes
+# Send to the person I am currently having video chat with, to make kill his or her render processes
+def send_videochat_leave(socket, ip):
     try:
         socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -290,7 +292,10 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             add_new_people(name, ip)
             if ip != userip:
-                executor.submit(send_response, ip)
+                executor.submit(send_tcp_packet, kwargs={
+                    packet_type: TcpMessageTypes.response
+                    ip: ip
+                })
         elif message_type == 'response':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -306,7 +311,7 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             print("Call accepted by", name, "starting video chat...")
-            send_start_call(ip)
+            send_tcp_packet(packet_type=TcpMessageTypes.startcall, ip=ip)
             start_video_chat(ip)
         elif message_type == 'startcall':
             global start_call_in_three_seconds
@@ -327,7 +332,8 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             if ip != userip:
                 sync_groups()
-                send_my_groups_to(ip, groups)
+                send_tcp_packet(
+                    packet_type=TcpMessageTypes.mygroups, groups=groups, ip=ip)
         elif message_type == "mygroups":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -346,7 +352,8 @@ def process_messages(data):  # Process incoming data
             if call_started and active_video_chat_group == groupname and (name, ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
                 render_video_chat(name, ip)
-                send_response_videochat_enter_packet(ip, groupname)
+                send_tcp_packet(
+                    packet_type=TcpMessageTypes.responsegroupchatenter, ip=ip, groupname=groupname)
         elif message_type == "announce_videochat_leave":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -389,7 +396,7 @@ def process_messages(data):  # Process incoming data
             for person in online_people:
                 if person[1] == ip:
                     subprocess.run(
-                    ["notify-send", person[0] + " with ip " + person[1] + " has left the application." + message])
+                        ["notify-send", person[0] + " with ip " + person[1] + " has left the application." + message])
                     online_people.remove(person)
         elif message_type == "videochatleave":
             global close_video_chat
@@ -598,7 +605,8 @@ def launch_group_chat():
     while inp != "c":
         inp = input("Press c to close video chat\n")
     print("Closing group chat")
-    send_group_video_chat_leave(active_video_chat_group)
+    send_udp_packet(packet_type=UdpMessageTypes.groupvideochatleave,
+                    groupname=active_video_chat_group)
     call_started = False
     active_video_chat_group = ""
 
@@ -699,9 +707,11 @@ def on_exit():  # Kill all gstreamer instances when exiting
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     send_udp_packet(packet_type=UdpMessageTypes.generalleave)
     if active_video_chat_group != "":
-        send_udp_packet(packet_type=UdpMessageTypes.groupvideochatleave, groupname=active_video_chat_group)
+        send_udp_packet(packet_type=UdpMessageTypes.groupvideochatleave,
+                        groupname=active_video_chat_group)
     if active_video_chat_friend_ip != "":
-        send_tcp_packet(packet_type=TcpMessageTypes.videochatleave, ip=active_video_chat_friend_ip)
+        send_tcp_packet(packet_type=TcpMessageTypes.videochatleave,
+                        ip=active_video_chat_friend_ip)
 
 
 def clear():  # Clear terminal
@@ -751,19 +761,21 @@ def get_ip():  # Get my ip in the network, tries to connect to an address via a 
     return IP
 
 
-def init(): # Starts tcp and udp listeners, starts announcer thread, registers on exit function
+def init():  # Starts tcp and udp listeners, starts announcer thread, registers on exit function
     tcplistener = threading.Thread(target=listen_tcp_messages, daemon=True)
     tcplistener.start()
 
     udplistener = threading.Thread(target=listen_udp_messages, daemon=True)
     udplistener.start()
 
-    announcer = threading.Thread(target=send_udp_packet, args=[UdpMessageTypes.announce], daemon=True)
+    announcer = threading.Thread(target=send_udp_packet, kwargs == {
+        packet_type=UdpMessageTypes.announce
+    }, daemon=True)
     announcer.start()
     atexit.register(on_exit)
 
 
-def choose_a_username(): # Requires user to choose a username
+def choose_a_username():  # Requires user to choose a username
     global username
     username = input("What is your name? \n")
     while not username:
@@ -771,6 +783,7 @@ def choose_a_username(): # Requires user to choose a username
         username = input("What is your name? \n")
 
 #! Main Code
+
 
 #! Global vars
 messages = {}
@@ -795,14 +808,15 @@ active_video_chat_group = ""
 active_video_chat_attendees = []
 active_video_chat_attendee_processes = {}
 
-active_video_chat_friend_ip = "" # For 1-1 video chat, leaving cause killing of video and audio rendering of the leaving person.
+# For 1-1 video chat, leaving cause killing of video and audio rendering of the leaving person.
+active_video_chat_friend_ip = ""
 #! Init code
 
-init() # Starts tcp and udp listeners, execute announcer thread, registers on exit function
-choose_a_username() # Choose a username
+init()  # Starts tcp and udp listeners, execute announcer thread, registers on exit function
+choose_a_username()  # Choose a username
 sync_groups()
 
-#! Main loop 
+#! Main loop
 
 choice = None
 flash_messages = ["Welcome to the transporter app. Have fun! \n"]
@@ -855,7 +869,11 @@ while choice != "q":
             sent_messages[person_cho].append(message)
         else:
             sent_messages[person_cho] = [message]
-        executor.submit(send_message, person_ip, message)
+        executor.submit(send_tcp_packet, kwargs={
+            packet_type: TcpMessageTypes.message,
+            ip: person_ip,
+            payload: message
+        })
         print("Message sent! \n")
 
         while True:
@@ -869,7 +887,11 @@ while choice != "q":
                     sent_messages[person_cho].append(message)
                 else:
                     sent_messages[person_cho] = [message]
-                executor.submit(send_message, person_ip, message)
+                executor.submit(send_tcp_packet, kwargs={
+                    packet_type: TcpMessageTypes.message,
+                    ip: person_ip,
+                    payload: message
+                })
                 print("Message sent! \n")
             elif sendAgain.capitalize() == "N":
                 break
@@ -943,14 +965,15 @@ while choice != "q":
         person_name = person_cho[0]
         person_ip = person_cho[1]
 
-        send_call(person_ip)
+        send_tcp_packet(packet_type=TcpMessageTypes.call, ip=person_ip)
         print("Calling", person_name + ".", "Waiting for response...")
         endCall = input("To cancel call, type 'c'.")
         while endCall != "c" and not call_started:
             print("Invalid answer, try again.")
             endCall = input("To cancel call, type 'c'.")
         if not call_started:
-            send_cancel_call(person_ip)
+            send_tcp_packet(
+                packet_type=TcpMessageTypes.cancelcall, ip=person_ip)
             flash_messages.append("Call canceled.")
     elif choice == "5":  # Calls
         clear()
@@ -978,7 +1001,8 @@ while choice != "q":
             pass
         start_call_in_three_seconds = False
         accepted_call_ip = will_be_called_person[1]
-        send_accept_call(will_be_called_person[1])  # ip
+        send_tcp_packet(packet_type=TcpMessageTypes.acceptcall,
+                        ip=will_be_called_person[1])
         print("Please wait..")
         time.sleep(3)
         if start_call_in_three_seconds:
@@ -1004,7 +1028,7 @@ while choice != "q":
             if gchoice == "1":  # List of all groups
                 print("Syncing groups please wait 3 seconds..")
                 all_groups.clear()
-                send_allgroups_request()
+                send_udp_packet(packet_type=UdpMessageTypes.allgroupsrequest)
                 print("3")
                 time.sleep(1)
                 print("2")
@@ -1054,7 +1078,8 @@ while choice != "q":
             if group == "c":
                 break
         # Announce that I am started video chat
-        send_udp_packet(packet_type=UdpMessageTypes.groupvideochatstart, groupname=groupname)
+        send_udp_packet(
+            packet_type=UdpMessageTypes.groupvideochatstart, groupname=groupname)
         # Render my own video, also stream my video and audio
         launch_group_chat()
     elif choice == "8":  # todo See group video chats going on.
@@ -1087,13 +1112,5 @@ while choice != "q":
         person_cho = temp_dict[int(person_num)]
         person_name = person_cho[0]
         person_ip = person_cho[1]
-        # todo: Add testing code
-        # executor.submit(send_response,person_ip)
-        # responser = threading.Thread(target=send_response, args=[
-        #                              person_ip], daemon=True)
-        # responser.start()
-
-    # elif choice == "5":  # Online people
-    #     flash_messages.append(threading.active_count())
 clear()
 print("Goodbye!")
