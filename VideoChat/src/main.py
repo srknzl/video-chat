@@ -100,7 +100,7 @@ def send_group_videochat_leave_packet(socket, groupname):
         time.sleep(1)
 
 
-def send_general_leave(socket):
+def send_general_leave(socket): # Send to everyone that I am leaving the application
     try:
         socket.sendto(("[" + str(username) + ", " + str(userip) + ", general_leave]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
@@ -245,7 +245,7 @@ def send_my_groups_packet(socket, ip, groups):
         time.sleep(1)
 
 
-def send_response_videochat_enter_packet(socket, ip, groupname):
+def send_response_videochat_enter_packet(socket, ip, groupname): # Send to the newly entered person to the group chat in order he or she to know who are already group chatting  
     try:
         socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -259,7 +259,7 @@ def send_response_videochat_enter_packet(socket, ip, groupname):
         time.sleep(1)
 
 
-def send_videochat_leave(socket, ip):
+def send_videochat_leave(socket, ip): # Send to the person I am currently having video chat with, to make kill his or her render processes
     try:
         socket.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
