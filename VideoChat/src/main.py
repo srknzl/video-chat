@@ -384,8 +384,14 @@ def process_messages(data):  # Process incoming data
                     processes = active_video_chat_attendee_processes[(
                         name, ip)]
                     for process in processes:
-                        kill(process, signal.SIGKILL)
-                    del active_video_chat_attendee_processes[(name, ip)]
+                        try:
+                            kill(process, signal.SIGKILL)
+                        except Exception:
+                            pass
+                    try:
+                        del active_video_chat_attendee_processes[(name, ip)]
+                    except KeyError:
+                        pass
         elif message_type == "response_videochat_enter":
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -667,12 +673,17 @@ def launch_group_chat():
         kill(streamVideoProcessPid, signal.SIGKILL)
         kill(streamAudioProcessPid, signal.SIGKILL)
         kill(renderOwnVideoProcessPid, signal.SIGKILL)
-        for user_entry in active_video_chat_attendee_processes:
-            processes = active_video_chat_attendee_processes[user_entry]
-            for pid in processes:
-                kill(pid, signal.SIGKILL)
     except Exception:
         pass
+
+    for user_entry in active_video_chat_attendee_processes:
+        processes = active_video_chat_attendee_processes[user_entry]
+        for pid in processes:
+            try:
+                kill(pid, signal.SIGKILL)
+            except Exception:
+                pass
+    
     active_video_chat_attendees = []
     active_video_chat_attendee_processes = {}
     print("Done closing group chat")
