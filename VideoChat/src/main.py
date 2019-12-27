@@ -827,10 +827,10 @@ flash_messages = ["Welcome to the transporter app. Have fun! \n"]
 while choice != "q":
     clear()
     print(transporterLogo)
-    if call_started:
-        if active_video_chat_group != "":
-            print("You are in video chat in group", active_video_chat_group)
-        print("Press c to close video chat")
+    # if call_started:
+    #     if active_video_chat_group != "":
+    #         print("You are in video chat in group", active_video_chat_group)
+    #     print("Press c to close video chat")
     for f_message in flash_messages:
         print(f_message)
     flash_messages.clear()
@@ -1011,7 +1011,7 @@ while choice != "q":
         time.sleep(3)
         if start_call_in_three_seconds:
             print("Video call starting... ")
-            executor.submit(start_video_chat, will_be_called_person[1])
+            start_video_chat(will_be_called_person[1])
         else:
             flash_messages.append("No respond from other side in 3 seconds.")
     elif choice == "6":  # Manage Groups
