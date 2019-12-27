@@ -27,6 +27,7 @@ class UdpMessageTypes(Enum):
     allgroupsrequest = 2
     groupvideochatstart = 3
     groupvideochatleave = 4
+    generalleave = 5
 
 #! GENERAL UDP FUNCTION
 
@@ -54,7 +55,10 @@ def send_udp_packet(packet_type, groupname):  # General udp packet sending funct
             send_group_videochat_leave_packet(udp_s, groupname)
             send_group_videochat_leave_packet(udp_s, groupname)
             # send_group_videochat_leave_packet(udp_s, groupname)
-
+        elif packet_type == UdpMessageTypes.generalleave:
+            send_general_leave(udp_s)
+            send_general_leave(udp_s)
+        
 
 # Send announce to everyone when logging in, via udp
 def send_announce_packet(socket):
@@ -94,7 +98,16 @@ def send_group_videochat_leave_packet(socket, groupname):
     except Exception as e:
         print("An error occured when broadcasting video start message", e)
         time.sleep(1)
-#! END OF UDP SECTION
+
+
+def send_general_leave(socket):
+    try:
+        socket.sendto(("[" + str(username) + ", " + str(userip) + ", general_leave]").encode(
+            "utf-8", errors="replace"), ('<broadcast>', 12345))
+    except Exception as e:
+        print("An error occured when broadcasting video start message", e)
+        time.sleep(1)    
+
 
 #! TCP SECTION
 
@@ -108,6 +121,7 @@ class TcpMessageTypes(Enum):
     cancelcall = 6
     mygroups = 7
     responsegroupchatenter = 8
+    videochatleave = 9
 
 #! GENERAL TCP FUNCTION
 
@@ -131,6 +145,8 @@ def send_tcp_packet(packet_type, ip, payload, groups, groupname):
             send_my_groups_packet(tcp_s, ip, groups)
         elif packet_type == TcpMessageTypes.responsegroupchatenter:
             send_response_videochat_enter_packet(tcp_s, ip, groupname)
+        elif packet_type == TcpMessageTypes.videochatleave:
+            send_videochat_leave(tcp_s, ip)
 
 
 # Send response message to a user with ip 'ip', via tcp
@@ -242,7 +258,9 @@ def send_response_videochat_enter_packet(socket, ip, groupname):
             "An error occured when sending videochat attendence info to someoone", e)
         time.sleep(1)
 
-#! END OF TCP SECTION
+
+def send_videochat_leave(socket, ip):
+    pass #Todo implement videochat leave
 
 #! Communication related
 
@@ -356,6 +374,10 @@ def process_messages(data):  # Process incoming data
             else:
                 messages[(name, ip)] = [message]
             add_new_people((name, ip))
+        elif message_type == "generalleave":
+            pass # Todo implement general leave
+        elif message_type == "videochatleave":
+            pass # Todo implement videochat leave
         else:
             print("Got an invalid message " + str(decode))
 
@@ -427,6 +449,7 @@ def add_new_people(name, ip):  # When a response or announce comes, this is call
 def start_video_chat(person_ip):  # Start video chat with a person with ip 'person_ip'
     global call_started
     call_started = True
+    active_video_chat_friend_ip = person_ip
     person_ip_splitted = person_ip.split(".")
     friend_ip = "234." + str(person_ip_splitted[1]) + "." + str(
         person_ip_splitted[2]) + "." + str(person_ip_splitted[3])
@@ -474,6 +497,7 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
 
     print("Closing")
     call_started = False
+    active_video_chat_friend_ip = ""
     # print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
     # Kill gstreamer processes
     kill(streamVideoProcessPid, signal.SIGTERM)
@@ -509,7 +533,7 @@ def render_video_chat(name, ip):
             renderVideoProcessPid, renderAudioProcessPid]
 
 
-def start_group_video_chat(groupname, flash_messages):  # Starts group video chat
+def start_group_video_chat(groupname):  # Starts group video chat
     global active_video_chat_attendees, active_video_chat_group, call_started
     if groupname not in groups:
         print("GroupChat: You are not in group", groupname)
@@ -521,15 +545,11 @@ def start_group_video_chat(groupname, flash_messages):  # Starts group video cha
     call_started = True
     active_video_chat_attendees = []  # Reset attendees
     active_video_chat_group = groupname  # Set current group chat group name
-    # Render my own video, also stream my video and audio
-    executor.submit(prepare_me_to_groupchat, flash_messages)
-    # Announce that I am started video chat
-    send_group_videochat_start(groupname)
     return True
 
 
 # Render my own video, also stream my video and audio
-def prepare_me_to_groupchat(flash_messages):
+def launch_group_chat():
     global active_video_chat_attendees, active_video_chat_attendee_processes, active_video_chat_group, call_started
     call_started = True
 
@@ -553,7 +573,7 @@ def prepare_me_to_groupchat(flash_messages):
     outs, errs = renderOwnVideoProcess.communicate()
     renderOwnVideoProcessPid = int(outs.decode())
 
-    flash_messages.append("Group video chat started...")
+    print("Group video chat started...")
 
     inp = input("Press c to close video chat\n")
     # print("Input is ",inp)
@@ -562,6 +582,7 @@ def prepare_me_to_groupchat(flash_messages):
     print("Closing group chat")
     send_group_video_chat_leave(active_video_chat_group)
     call_started = False
+    active_video_chat_group = ""
 
     kill(streamVideoProcessPid, signal.SIGKILL)
     kill(streamAudioProcessPid, signal.SIGKILL)
@@ -572,7 +593,6 @@ def prepare_me_to_groupchat(flash_messages):
             # print("Killing",pid)
             kill(pid, signal.SIGKILL)
     active_video_chat_attendees = []
-    active_video_chat_group = ""
     active_video_chat_attendee_processes = {}
     print("Done closing group chat")
 
@@ -659,6 +679,14 @@ def sync_groups():  # Update groups from groups folder
 def on_exit():  # Kill all gstreamer instances when exiting
     subprocess.run(["killall", "-9", "gst-launch-1.0"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    send_udp_packet(UdpMessageTypes.generalleave)
+    if active_video_chat_group != "":
+        send_udp_packet(UdpMessageTypes.groupvideochatleave, active_video_chat_group)
+    if active_video_chat_friend_ip != "":
+        send_tcp_packet(TcpMessageTypes.videochatleave, active_video_chat_friend_ip)
+    # Todo send leave message from 1-1 video chat if attended
+    # Todo send leave message from group chat if attended
+    # Todo Send general leave message to delete the person from online people 
 
 
 def clear():  # Clear terminal
@@ -724,7 +752,7 @@ def init(): # Starts tcp and udp listeners, starts announcer thread, registers o
 
 def choose_a_username(): # Requires user to choose a username
     while not username:
-    print("Please enter a name!")
+        print("Please enter a name!")
     username = input("What is your name? \n")
 
 #! Main Code
@@ -751,6 +779,7 @@ active_video_chat_group = ""
 active_video_chat_attendees = []
 active_video_chat_attendee_processes = {}
 
+active_video_chat_friend_ip = "" # For 1-1 video chat, leaving cause killing of video and audio rendering of the leaving person.
 #! Init code
 
 init() # Starts tcp and udp listeners, execute announcer thread, registers on exit function
@@ -1006,10 +1035,14 @@ while choice != "q":
         group = input("Enter a group name. To cancel type 'c'.\n")
         if group == "c":
             continue
-        while not start_group_video_chat(group, flash_messages):
+        while not start_group_video_chat(group):
             group = input("Enter a group name. To cancel type 'c'.\n")
             if group == "c":
                 break
+        # Announce that I am started video chat
+        send_udp_packet(UdpMessageTypes.groupvideochatstart, groupname)
+        # Render my own video, also stream my video and audio
+        launch_group_chat()
     elif choice == "9":  # todo See group video chats going on.
         pass
     elif choice == "t":  # ! testing purposes
