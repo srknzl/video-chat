@@ -385,7 +385,12 @@ def process_messages(data):  # Process incoming data
                 messages[(name, ip)] = [message]
             add_new_people((name, ip))
         elif message_type == "generalleave":
-            pass # Todo implement general leave
+            ip = decoded_splitted[1].strip(' ')
+            for person in online_people:
+                if person[1] == ip:
+                    subprocess.run(
+                    ["notify-send", person[0] + " with ip " + person[1] + " has left the application." + message])
+                    online_people.remove(person)
         elif message_type == "videochatleave":
             pass # Todo implement videochat leave
         else:
