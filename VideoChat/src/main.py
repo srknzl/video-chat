@@ -607,10 +607,10 @@ def launch_group_chat():
 
     print("Group video chat started...")
 
-    inp = input("Press c to close video chat\n")
+    inp = input("Press c to close video chat")
     # print("Input is ",inp)
     while inp != "c":
-        inp = input("Press c to close video chat\n")
+        inp = input("Press c to close video chats")
     print("Closing group chat")
     send_udp_packet(packet_type=UdpMessageTypes.groupvideochatleave,
                     groupname=active_video_chat_group)
