@@ -702,9 +702,6 @@ def on_exit():  # Kill all gstreamer instances when exiting
         send_udp_packet(UdpMessageTypes.groupvideochatleave, active_video_chat_group)
     if active_video_chat_friend_ip != "":
         send_tcp_packet(TcpMessageTypes.videochatleave, active_video_chat_friend_ip)
-    # Todo send leave message from 1-1 video chat if attended
-    # Todo send leave message from group chat if attended
-    # Todo Send general leave message to delete the person from online people 
 
 
 def clear():  # Clear terminal
@@ -721,9 +718,8 @@ def print_options():  # Print main menu
     print("4. Start video chat")
     print("5. Pending video calls")
     print("6. Manage Groups")
-    print("7. Send message to a group")
-    print("8. Attend video chat in a group")
-    print("9. See group video chats going on. ")
+    print("7. Attend video chat in a group")
+    print("8. See group video chats going on. ")
     print("q. Quit")
 
 
@@ -1041,9 +1037,7 @@ while choice != "q":
                 if groupname == "c":
                     continue
                 leave_group(groupname, flash_messages)
-    elif choice == "7":  # todo Send message to a group
-        pass
-    elif choice == "8":  # Attend video chat in a group
+    elif choice == "7":  # Attend video chat in a group
         clear()
         print("------------------Attend Group Video Chat------------------ \n\n")
         if call_started:
@@ -1062,9 +1056,9 @@ while choice != "q":
         send_udp_packet(UdpMessageTypes.groupvideochatstart, groupname)
         # Render my own video, also stream my video and audio
         launch_group_chat()
-    elif choice == "9":  # todo See group video chats going on.
+    elif choice == "8":  # todo See group video chats going on.
         pass
-    elif choice == "t":  # ! testing purposes
+    elif choice == "9":  # ! testing purposes
         clear()
         print("------------------Testing------------------ \n\n")
         if len(online_people) == 0:
