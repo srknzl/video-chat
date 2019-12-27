@@ -395,12 +395,12 @@ def process_messages(data):  # Process incoming data
             else:
                 messages[(name, ip)] = [message]
             add_new_people((name, ip))
-        elif message_type == "generalleave":
+        elif message_type == "general_leave":
             ip = decoded_splitted[1].strip(' ')
             for person in online_people:
-                if person[1] == ip:
+                if person[1] == ip: # Delete the person
                     subprocess.run(
-                        ["notify-send", person[0] + " with ip " + person[1] + " has left the application." + message])
+                    ["notify-send", person[0] + " with ip " + person[1] + " has left the application."])
                     online_people.remove(person)
         elif message_type == "videochatleave":
             global close_video_chat
@@ -417,12 +417,12 @@ def process_messages(data):  # Process incoming data
 def listen_tcp_messages():  # Open a tcp socket and wait, every new connection is handled via a new thread submission to executor pool
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((get_ip(), 12345))
-        sock.listen()
-        while True:
-            conn, addr = sock.accept()
-            executor.submit(on_new_tcp_connection, conn, addr)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((get_ip(), 12345))
+            sock.listen()
+            while True:
+                conn, addr = sock.accept()
+                executor.submit(on_new_tcp_connection, conn, addr)
     except Exception:
         pass
     
@@ -431,13 +431,13 @@ def listen_tcp_messages():  # Open a tcp socket and wait, every new connection i
 def listen_udp_messages():  # Open a udp socket and wait, every new connection is handled via a new thread submission to executor pool
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        #sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 0)
-        sock.bind(("", 12345))
-        while True:
-            data, addr = sock.recvfrom(1500)
-            executor.submit(on_new_udp_connection, data, addr)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            #sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 0)
+            sock.bind(("", 12345))
+            while True:
+                data, addr = sock.recvfrom(1500)
+                executor.submit(on_new_udp_connection, data, addr)
     except Exception:
         pass
     
