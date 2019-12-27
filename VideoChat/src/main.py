@@ -662,12 +662,13 @@ def enter_group(groupname, flash_messages):  # Enter a group
     if not isAlphaNumeric(groupname):
         flash_messages.append(
             "EnterGroup: The groupname you entered is not alphanumeric.")
-    if groupname not in groups:
-        f = open("groups/" + groupname, "w+")
-        f.close()
-        flash_messages.append("EnterGroup: Entered group " + groupname)
     else:
-        flash_messages.append("EnterGroup: You are already in this group")
+        if groupname not in groups:
+            f = open("groups/" + groupname, "w+")
+            f.close()
+            flash_messages.append("EnterGroup: Entered group " + groupname)
+        else:
+            flash_messages.append("EnterGroup: You are already in this group")
 
 
 def leave_group(groupname, flash_messages):  # Leave a group
