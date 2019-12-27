@@ -159,7 +159,7 @@ def send_response_packet(s, ip):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.connect((ip, 12345))
         s.sendall(("[" + str(username) + ", " + str(userip) +
-                        ", response]").encode("utf-8", errors="replace"))
+                   ", response]").encode("utf-8", errors="replace"))
         s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when responding to an announce message", e)
@@ -296,10 +296,10 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             add_new_people(name, ip)
             if ip != userip:
-                executor.submit(send_tcp_packet, 
-                    packet_type=TcpMessageTypes.response,
-                    ip=ip
-                )
+                executor.submit(send_tcp_packet,
+                                packet_type=TcpMessageTypes.response,
+                                ip=ip
+                                )
         elif message_type == 'response':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -529,11 +529,14 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
     active_video_chat_friend_ip = ""
     # print(streamVideoProcessPid,streamAudioProcessPid,renderOwnVideoProcessPid,renderVideoProcessPid,renderAudioProcessPid)
     # Kill gstreamer processes
-    kill(streamVideoProcessPid, signal.SIGTERM)
-    kill(streamAudioProcessPid, signal.SIGTERM)
-    kill(renderOwnVideoProcessPid, signal.SIGTERM)
-    kill(renderVideoProcessPid, signal.SIGTERM)
-    kill(renderAudioProcessPid, signal.SIGTERM)
+    try:
+        kill(streamVideoProcessPid, signal.SIGTERM)
+        kill(streamAudioProcessPid, signal.SIGTERM)
+        kill(renderOwnVideoProcessPid, signal.SIGTERM)
+        kill(renderVideoProcessPid, signal.SIGTERM)
+        kill(renderAudioProcessPid, signal.SIGTERM)
+    except Exception:
+        pass
 
     print("Done closing")
 
@@ -773,7 +776,7 @@ def init():  # Starts tcp and udp listeners, starts announcer thread, registers 
     udplistener.start()
 
     announcer = threading.Thread(target=send_udp_packet, kwargs={
-        "packet_type":UdpMessageTypes.announce
+        "packet_type": UdpMessageTypes.announce
     }, daemon=True)
     announcer.start()
     atexit.register(on_exit)
@@ -844,7 +847,7 @@ while choice != "q":
             print("Online people: \n")
             for person in online_people:
                 print(str(counter) + ". Name: " +
-                    str(person[0]) + " IP: " + str(person[1]))
+                      str(person[0]) + " IP: " + str(person[1]))
                 temp_dict[counter] = person
                 counter += 1
 
@@ -854,7 +857,8 @@ while choice != "q":
             while not person_num.isdigit() or int(person_num) > (counter - 1) or int(person_num) < 1:
                 if person_num == "c":
                     break
-                person_num = input("Invalid person number. Please enter again: \n")
+                person_num = input(
+                    "Invalid person number. Please enter again: \n")
             if person_num == "c":
                 continue
             person_cho = temp_dict[int(person_num)]
@@ -871,10 +875,10 @@ while choice != "q":
             else:
                 sent_messages[person_cho] = [message]
             executor.submit(send_tcp_packet,
-                packet_type=TcpMessageTypes.message,
-                ip=person_ip,
-                payload=message
-            )
+                            packet_type=TcpMessageTypes.message,
+                            ip=person_ip,
+                            payload=message
+                            )
             print("Message sent! \n")
 
             while True:
@@ -889,10 +893,10 @@ while choice != "q":
                     else:
                         sent_messages[person_cho] = [message]
                     executor.submit(send_tcp_packet,
-                        packet_type=TcpMessageTypes.message,
-                        ip=person_ip,
-                        payload=message
-                    )
+                                    packet_type=TcpMessageTypes.message,
+                                    ip=person_ip,
+                                    payload=message
+                                    )
                     print("Message sent! \n")
                 elif sendAgain.capitalize() == "N":
                     break
@@ -908,7 +912,7 @@ while choice != "q":
             counter = 1
             for entry in messages:
                 print(str(counter) + ". " + "Name: " +
-                    entry[0] + " IP:" + entry[1])
+                      entry[0] + " IP:" + entry[1])
                 temp_dict[counter] = entry
                 counter += 1
             entry_num = input("Select an entry.\nTo cancel, type 'c': \n")
@@ -946,7 +950,7 @@ while choice != "q":
             print("Online people: \n")
             for person in online_people:
                 print(str(counter) + ". Name: " +
-                    str(person[0]) + " IP: " + str(person[1]))
+                      str(person[0]) + " IP: " + str(person[1]))
                 temp_dict[counter] = person
                 counter += 1
 
@@ -956,7 +960,8 @@ while choice != "q":
             while not person_num.isdigit() or int(person_num) > (counter - 1) or int(person_num) < 1:
                 if person_num == "c":
                     break
-                person_num = input("Invalid person number. Please enter again: \n")
+                person_num = input(
+                    "Invalid person number. Please enter again: \n")
             if person_num == "c":
                 continue
             if call_started:
@@ -984,12 +989,14 @@ while choice != "q":
                 continue
             for i in range(len(calls)):
                 print(str(i+1)+".", "Name:", calls[i][0], "Ip:", calls[i][1])
-            person_num = input("Select a person to answer. To cancel, type 'c'.\n")
+            person_num = input(
+                "Select a person to answer. To cancel, type 'c'.\n")
 
             while not person_num.isdigit() or int(person_num) > len(calls) or int(person_num) < 1:
                 if person_num == "c":
                     break
-                person_num = input("Invalid person number. Please enter again: \n")
+                person_num = input(
+                    "Invalid person number. Please enter again: \n")
             if person_num == "c":
                 continue
             if call_started:
@@ -1010,7 +1017,8 @@ while choice != "q":
                 print("Video call starting... ")
                 start_video_chat(will_be_called_person[1])
             else:
-                flash_messages.append("No respond from other side in 3 seconds.")
+                flash_messages.append(
+                    "No respond from other side in 3 seconds.")
         elif choice == "6":  # Manage Groups
             clear()
             print("------------------Manage Groups------------------ \n\n")
@@ -1029,7 +1037,8 @@ while choice != "q":
                 if gchoice == "1":  # List of all groups
                     print("Syncing groups please wait 3 seconds..")
                     all_groups.clear()
-                    send_udp_packet(packet_type=UdpMessageTypes.allgroupsrequest)
+                    send_udp_packet(
+                        packet_type=UdpMessageTypes.allgroupsrequest)
                     print("3")
                     time.sleep(1)
                     print("2")
@@ -1043,7 +1052,8 @@ while choice != "q":
                         flash_messages.append("No groups found")
                     else:
                         all_groups_string = ", ".join(all_groups)
-                        flash_messages.append("All groups: " + all_groups_string)
+                        flash_messages.append(
+                            "All groups: " + all_groups_string)
                 elif gchoice == "2":  # List of groups I attended
                     sync_groups()
                     print_groups(flash_messages)
@@ -1097,7 +1107,7 @@ while choice != "q":
             print("Online people: \n")
             for person in online_people:
                 print(str(counter) + ". Name: " +
-                    str(person[0]) + " IP: " + str(person[1]))
+                      str(person[0]) + " IP: " + str(person[1]))
                 temp_dict[counter] = person
                 counter += 1
 
@@ -1107,7 +1117,8 @@ while choice != "q":
             while not person_num.isdigit() or int(person_num) > (counter - 1) or int(person_num) < 1:
                 if person_num == "c":
                     break
-                person_num = input("Invalid person number. Please enter again: \n")
+                person_num = input(
+                    "Invalid person number. Please enter again: \n")
             if person_num == "c":
                 continue
             person_cho = temp_dict[int(person_num)]
