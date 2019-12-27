@@ -357,7 +357,8 @@ def process_messages(data):  # Process incoming data
             if groupname not in ongoing_group_video_chats:
                 ongoing_group_video_chats[groupname] = [(name, ip)]
             else:
-                ongoing_group_video_chats[groupname].append((name, ip))
+                if (name, ip) not in ongoing_group_video_chats[groupname]:
+                    ongoing_group_video_chats[groupname].append((name, ip))
 
             if call_started and active_video_chat_group == groupname and (name, ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
@@ -393,7 +394,8 @@ def process_messages(data):  # Process incoming data
             if groupname not in ongoing_group_video_chats:
                 ongoing_group_video_chats[groupname] = [(name, ip)]
             else:
-                ongoing_group_video_chats[groupname].append((name, ip))
+                if (name, ip) not in ongoing_group_video_chats[groupname]:
+                    ongoing_group_video_chats[groupname].append((name, ip))
 
             if active_video_chat_group != "" and call_started and groupname == active_video_chat_group and (name, ip) not in active_video_chat_attendees:
                 active_video_chat_attendees.append((name, ip))
