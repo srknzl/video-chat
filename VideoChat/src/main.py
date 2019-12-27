@@ -63,9 +63,9 @@ def send_udp_packet(packet_type, groupname=""):  # General udp packet sending fu
 
 
 # Send announce to everyone when logging in, via udp
-def send_announce_packet(socket):
+def send_announce_packet(s):
     try:
-        socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
+        s.sendto(("[" + str(username) + ", " + str(userip) + ", announce]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting", e)
@@ -73,9 +73,9 @@ def send_announce_packet(socket):
 
 
 # Send allgroups request to everyone, everyone send all their groups as reply, via udp
-def send_allgroups_req_packet(socket):
+def send_allgroups_req_packet(s):
     try:
-        socket.sendto(("[" + str(username) + ", " + str(userip) + ", allgroups]").encode(
+        s.sendto(("[" + str(username) + ", " + str(userip) + ", allgroups]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting all groups request", e)
@@ -83,9 +83,9 @@ def send_allgroups_req_packet(socket):
 
 
 # Send everyone that I am starting a videochat in group 'groupname'
-def send_group_videochat_start_packet(socket, groupname):
+def send_group_videochat_start_packet(s, groupname):
     try:
-        socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_enter, " + str(groupname) + "]").encode(
+        s.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_enter, " + str(groupname) + "]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting video start message", e)
@@ -93,18 +93,18 @@ def send_group_videochat_start_packet(socket, groupname):
 
 
 # Send everyone that I am leaving a videochat in group 'groupname'
-def send_group_videochat_leave_packet(socket, groupname):
+def send_group_videochat_leave_packet(s, groupname):
     try:
-        socket.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_leave, " + str(groupname) + "]").encode(
+        s.sendto(("[" + str(username) + ", " + str(userip) + ", announce_videochat_leave, " + str(groupname) + "]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting video start message", e)
         time.sleep(1)
 
 
-def send_general_leave(socket):  # Send to everyone that I am leaving the application
+def send_general_leave(s):  # Send to everyone that I am leaving the application
     try:
-        socket.sendto(("[" + str(username) + ", " + str(userip) + ", general_leave]").encode(
+        s.sendto(("[" + str(username) + ", " + str(userip) + ", general_leave]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
         print("An error occured when broadcasting general leave message", e)
@@ -154,76 +154,76 @@ def send_tcp_packet(packet_type, ip=None, payload=None, groups=None, groupname=N
 
 
 # Send response message to a user with ip 'ip', via tcp
-def send_response_packet(socket, ip):
+def send_response_packet(s, ip):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(("[" + str(username) + ", " + str(userip) +
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(("[" + str(username) + ", " + str(userip) +
                         ", response]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when responding to an announce message", e)
         time.sleep(1)
 
 
 # Send message 'payload' to a user with ip 'ip', via tcp
-def send_message_packet(socket, ip, payload):
+def send_message_packet(s, ip, payload):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", message, " + str(payload) + "]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when message is sending", e)
         time.sleep(1)
 
 
 # Send call request message to a user with ip 'ip', via tcp
-def send_call_packet(socket, ip):
+def send_call_packet(s, ip):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", call]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when sending call message", e)
         time.sleep(1)
 
 
 # Send ok message to a call request, sent after getting a call to a user with ip 'ip', via tcp
-def send_accept_call_packet(socket, ip):
+def send_accept_call_packet(s, ip):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", acceptcall]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when sending accept call message", e)
         time.sleep(1)
 
 
 # Starting response, sent after call is accepted by other party, to a user with ip 'ip', via tcp
-def send_start_call_packet(socket, ip):
+def send_start_call_packet(s, ip):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", startcall]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when sending start call message", e)
         time.sleep(1)
 
 
 # Sent when 1-1 call is canceled, to a user with ip 'ip', via tcp
-def send_cancel_call_packet(socket, ip):
+def send_cancel_call_packet(s, ip):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", cancelcall]").encode("utf-8", errors="replace"))
         socket.shutdown(socket.SHUT_RDWR)
     except Exception as e:
@@ -232,32 +232,32 @@ def send_cancel_call_packet(socket, ip):
 
 
 # Send my groups 'groups' to a person that has requested my groups with ip 'ip', via tcp
-def send_my_groups_packet(socket, ip, groups):
+def send_my_groups_packet(s, ip, groups):
     try:
-        socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
         if len(groups) == 0:
-            socket.sendall(
+            s.sendall(
                 ("[" + str(username) + ", " + str(userip) + ", mygroups]").encode("utf-8", errors="replace"))
         else:
             mygroups_string = ", ".join(groups)
-            socket.sendall(
+            s.sendall(
                 ("[" + str(username) + ", " + str(userip) + ", mygroups, " + mygroups_string + "]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when sending my groups", e)
         time.sleep(1)
 
 
 # Send to the newly entered person to the group chat in order he or she to know who are already group chatting
-def send_response_videochat_enter_packet(socket, ip, groupname):
+def send_response_videochat_enter_packet(s, ip, groupname):
     try:
-        socket.setsockopt(
+        s.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", response_videochat_enter, " + str(groupname) + "]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print(
             "An error occured when sending videochat attendence info to someoone", e)
@@ -265,14 +265,14 @@ def send_response_videochat_enter_packet(socket, ip, groupname):
 
 
 # Send to the person I am currently having video chat with, to make kill his or her render processes
-def send_videochat_leave(socket, ip):
+def send_videochat_leave(s, ip):
     try:
-        socket.setsockopt(
+        s.setsockopt(
             socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket.connect((ip, 12345))
-        socket.sendall(
+        s.connect((ip, 12345))
+        s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", videochat_leave]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print(
             "An error occured when sending videochat leave info to someoone", e)
