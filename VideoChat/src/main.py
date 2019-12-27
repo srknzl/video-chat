@@ -415,17 +415,22 @@ def process_messages(data):  # Process incoming data
 
 
 def listen_tcp_messages():  # Open a tcp socket and wait, every new connection is handled via a new thread submission to executor pool
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((get_ip(), 12345))
         sock.listen()
         while True:
             conn, addr = sock.accept()
             executor.submit(on_new_tcp_connection, conn, addr)
+    except Exception:
+        pass
+    
 
 
 def listen_udp_messages():  # Open a udp socket and wait, every new connection is handled via a new thread submission to executor pool
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         #sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 0)
@@ -433,6 +438,9 @@ def listen_udp_messages():  # Open a udp socket and wait, every new connection i
         while True:
             data, addr = sock.recvfrom(1500)
             executor.submit(on_new_udp_connection, data, addr)
+    except Exception:
+        pass
+    
 
 
 # Reads data from tcp connection than sends data to process_messages
