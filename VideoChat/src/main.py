@@ -1123,8 +1123,12 @@ while choice != "q":
                 packet_type=UdpMessageTypes.groupvideochatstart, groupname=group)
             # Render my own video, also stream my video and audio
             launch_group_chat()
-        elif choice == "8":  # todo See group video chats going on.
-            pass
+        elif choice == "8": 
+            for group in ongoing_group_video_chats:
+                flash_messages.append("There is a video chat going on in group " + group)
+                flash_messages.append("Attendees: \n")
+                for person in ongoing_group_video_chats[group]:
+                    flash_messages.append("Name: " + person[0] + ", Ip: " + person[1])
         elif choice == "9":  # ! testing purposes
             clear()
             print("------------------Testing------------------ \n\n")
