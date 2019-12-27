@@ -392,7 +392,10 @@ def process_messages(data):  # Process incoming data
                     ["notify-send", person[0] + " with ip " + person[1] + " has left the application." + message])
                     online_people.remove(person)
         elif message_type == "videochatleave":
-            pass # Todo implement videochat leave
+            global close_video_chat
+            ip = decoded_splitted[1].strip(' ')
+            if active_video_chat_friend_ip == ip:
+                close_video_chat = True
         else:
             print("Got an invalid message " + str(decode))
 
@@ -462,7 +465,7 @@ def add_new_people(name, ip):  # When a response or announce comes, this is call
 #! Video chat related
 
 def start_video_chat(person_ip):  # Start video chat with a person with ip 'person_ip'
-    global call_started
+    global call_started, close_video_chat
     call_started = True
     active_video_chat_friend_ip = person_ip
     person_ip_splitted = person_ip.split(".")
@@ -507,9 +510,9 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
     print("Video chat started...")
 
     inp = input("Press c to close video chat")
-    while inp != "c":
+    while inp != "c" or close_video_chat:
         inp = input("Press c to close video chat")
-
+    close_video_chat = False
     print("Closing")
     call_started = False
     active_video_chat_friend_ip = ""
@@ -780,6 +783,7 @@ calls = []
 start_call_in_three_seconds = False
 accepted_call_ip = ""
 call_started = False
+close_video_chat = False
 
 online_people = set()
 # online_people.add(("serkan", "192.168.43.224"))
