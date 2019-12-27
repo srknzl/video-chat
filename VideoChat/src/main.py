@@ -105,7 +105,7 @@ def send_general_leave(socket):
         socket.sendto(("[" + str(username) + ", " + str(userip) + ", general_leave]").encode(
             "utf-8", errors="replace"), ('<broadcast>', 12345))
     except Exception as e:
-        print("An error occured when broadcasting video start message", e)
+        print("An error occured when broadcasting general leave message", e)
         time.sleep(1)    
 
 
@@ -260,7 +260,17 @@ def send_response_videochat_enter_packet(socket, ip, groupname):
 
 
 def send_videochat_leave(socket, ip):
-    pass #Todo implement videochat leave
+    try:
+        socket.setsockopt(
+            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        socket.connect((ip, 12345))
+        socket.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", videochat_leave]").encode("utf-8", errors="replace"))
+        socket.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print(
+            "An error occured when sending videochat leave info to someoone", e)
+        time.sleep(1)
 
 #! Communication related
 
