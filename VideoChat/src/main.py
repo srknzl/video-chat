@@ -32,7 +32,7 @@ class UdpMessageTypes(Enum):
 #! GENERAL UDP FUNCTION
 
 
-def send_udp_packet(packet_type, groupname):  # General udp packet sending function
+def send_udp_packet(packet_type, groupname=""):  # General udp packet sending function
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as udp_s:
         udp_s.settimeout(0.2)
         udp_s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -127,7 +127,7 @@ class TcpMessageTypes(Enum):
 
 
 # General tcp packet sending function
-def send_tcp_packet(packet_type, ip, payload, groups, groupname):
+def send_tcp_packet(packet_type, ip=None, payload=None, groups=None, groupname=None):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_s:
         if packet_type == TcpMessageTypes.response:
             send_response_packet(tcp_s, ip)
@@ -697,11 +697,11 @@ def sync_groups():  # Update groups from groups folder
 def on_exit():  # Kill all gstreamer instances when exiting
     subprocess.run(["killall", "-9", "gst-launch-1.0"],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    send_udp_packet(UdpMessageTypes.generalleave)
+    send_udp_packet(packet_type=UdpMessageTypes.generalleave)
     if active_video_chat_group != "":
-        send_udp_packet(UdpMessageTypes.groupvideochatleave, active_video_chat_group)
+        send_udp_packet(packet_type=UdpMessageTypes.groupvideochatleave, groupname=active_video_chat_group)
     if active_video_chat_friend_ip != "":
-        send_tcp_packet(TcpMessageTypes.videochatleave, active_video_chat_friend_ip)
+        send_tcp_packet(packet_type=TcpMessageTypes.videochatleave, ip=active_video_chat_friend_ip)
 
 
 def clear():  # Clear terminal
@@ -1053,7 +1053,7 @@ while choice != "q":
             if group == "c":
                 break
         # Announce that I am started video chat
-        send_udp_packet(UdpMessageTypes.groupvideochatstart, groupname)
+        send_udp_packet(packet_type=UdpMessageTypes.groupvideochatstart, groupname=groupname)
         # Render my own video, also stream my video and audio
         launch_group_chat()
     elif choice == "8":  # todo See group video chats going on.
