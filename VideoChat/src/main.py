@@ -547,7 +547,7 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
     print("Video chat started...")
 
     inp = input("Press c to close video chat")
-    while inp != "c" or close_video_chat:
+    while inp != "c" and not close_video_chat:
         inp = input("Press c to close video chat")
     close_video_chat = False
     print("Closing")
