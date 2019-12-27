@@ -1089,8 +1089,10 @@ while choice != "q":
                 if group == "c":
                     break
             # Announce that I am started video chat
+            if group == "c":
+                continue
             send_udp_packet(
-                packet_type=UdpMessageTypes.groupvideochatstart, groupname=groupname)
+                packet_type=UdpMessageTypes.groupvideochatstart, groupname=group)
             # Render my own video, also stream my video and audio
             launch_group_chat()
         elif choice == "8":  # todo See group video chats going on.
