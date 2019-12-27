@@ -277,7 +277,7 @@ def send_videochat_leave(socket, ip): # Send to the person I am currently having
 
 def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
-    print(decoded)
+    # print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
@@ -758,16 +758,17 @@ def init(): # Starts tcp and udp listeners, starts announcer thread, registers o
     udplistener = threading.Thread(target=listen_udp_messages, daemon=True)
     udplistener.start()
 
-    announcer = threading.Thread(target=send_udp_packet, args=(
-        UdpMessageTypes.announce), daemon=True)
+    announcer = threading.Thread(target=send_udp_packet, args=[UdpMessageTypes.announce], daemon=True)
     announcer.start()
     atexit.register(on_exit)
 
 
 def choose_a_username(): # Requires user to choose a username
+    global username
+    username = input("What is your name? \n")
     while not username:
         print("Please enter a name!")
-    username = input("What is your name? \n")
+        username = input("What is your name? \n")
 
 #! Main Code
 
@@ -783,7 +784,7 @@ close_video_chat = False
 
 online_people = set()
 # online_people.add(("serkan", "192.168.43.224"))
-username = input("What is your name? \n")
+username = ""
 userip = get_ip()
 
 executor = ThreadPoolExecutor(255)
