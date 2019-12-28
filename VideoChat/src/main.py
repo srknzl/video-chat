@@ -361,7 +361,7 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             print("Call accepted by", name, "starting video chat...")
             send_tcp_packet(packet_type=TcpMessageTypes.startcall, ip=ip)
-            start_video_chat(ip)
+            start_video_chat(ip, True)
         elif message_type == 'startcall':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -546,7 +546,7 @@ def add_new_people(name, ip):  # When a response or announce comes, this is call
 
 #! Video chat related
 
-def start_video_chat(person_ip):  # Start video chat with a person with ip 'person_ip'
+def start_video_chat(person_ip, in_thread):  # Start video chat with a person with ip 'person_ip'
     global call_started, close_video_chat, active_video_chat_friend_ip, videochat_pids
     call_started = True
     active_video_chat_friend_ip = person_ip
@@ -591,13 +591,17 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
 
     videochat_pids = (renderAudioProcessPid, renderVideoProcessPid)
 
-    print("Video chat started, press Enter to continue...")
+    
+    if in_thread:
+        print("Video chat started, press Enter to continue...")
+    else: 
+        print("Video chat started...")
 
-    inp = input("Press c to close video chat")
+    inp = input("Press c to close video chat\n")
     while inp != "c":
         if close_video_chat:
             break
-        inp = input("Press c to close video chat")
+        inp = input("Press c to close video chat\n")
     print("Closing")
     close_video_chat = False
     call_started = False
@@ -687,10 +691,10 @@ def launch_group_chat():
 
     print("Group video chat started...")
 
-    inp = input("Press c to close video chat")
+    inp = input("Press c to close video chat\n")
     # print("Input is ",inp)
     while inp != "c":
-        inp = input("Press c to close video chats")
+        inp = input("Press c to close video chat\n")
     print("Closing group chat")
     send_udp_packet(packet_type=UdpMessageTypes.groupvideochatleave,
                     groupname=active_video_chat_group)
@@ -1111,7 +1115,7 @@ while choice != "q":
                 time.sleep(0.3)
             if start_call_in_three_seconds:
                 print("Video call starting... ")
-                start_video_chat(will_be_called_person[1])
+                start_video_chat(will_be_called_person[1], False)
             else:
                 flash_messages.append(
                     "No respond from other side in 3 seconds.")
