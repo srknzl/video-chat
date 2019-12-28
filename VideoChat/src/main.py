@@ -462,11 +462,11 @@ def process_messages(data):  # Process incoming data
                 close_video_chat = True
                 active_video_chat_friend_ip = ""
                 try:
-                    kill(videochat_pids[0], signal.SIGTERM)
-                    kill(videochat_pids[1], signal.SIGTERM)
+                    for pid in videochat_pids:
+                        kill(pid, signal.SIGTERM)
                 except Exception:
                     pass
-                videochat_pids = ()
+                videochat_pids = []
                 subprocess.run(
                     ["notify-send", name + " with ip " + ip + " has left the video chat."])
                 print("\n"+ name + " with ip " + ip +
@@ -589,7 +589,7 @@ def start_video_chat(person_ip, in_thread):  # Start video chat with a person wi
     outs, errs = renderAudioProcess.communicate()
     renderAudioProcessPid = int(outs.decode())
 
-    videochat_pids = (renderAudioProcessPid, renderVideoProcessPid)
+    videochat_pids = [renderAudioProcessPid, renderVideoProcessPid, renderOwnVideoProcessPid]
 
     
     if in_thread:
@@ -834,7 +834,7 @@ def print_options():  # Print main menu
 def print_group_manage_options():  # Manage Group Options
     print("1. List of all groups")
     print("2. List of groups I attended")
-    print("3. Enter a group")
+    print("3. Enter/Create a group")
     print("4. Leave a group")
     print("c. Cancel")
 
@@ -910,7 +910,7 @@ active_video_chat_attendee_processes = {}
 # For 1-1 video chat, leaving cause killing of video and audio rendering of the leaving person.
 active_video_chat_friend_ip = ""
 # Render pids for audio and video, used to kill processes upon getting leave message
-videochat_pids = ()
+videochat_pids = []
 
 # Group video chats going on, groupname->array of person
 ongoing_group_video_chats = {}
