@@ -353,7 +353,7 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             subprocess.run(["notify-send", "New call from " +
-                            name + ".\n" + "To accept, go to calls."])
+                            name + ".\n" + "To accept, go to calls.", "-t", "1000"])
             if (name, ip) not in calls:
                 calls.append((name, ip))
         elif message_type == 'acceptcall':
@@ -371,7 +371,7 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             subprocess.run(
-                ["notify-send", name + " canceled a call."])
+                ["notify-send", name + " canceled a call.", "-t", "1000"])
             try:
                 calls.remove((name, ip))
             except ValueError:
@@ -411,7 +411,7 @@ def process_messages(data):  # Process incoming data
 
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
-                subprocess.run(["notify-send", name + " left the video chat."])
+                subprocess.run(["notify-send", name + " left the video chat.", "-t", "1000"])
                 if (name, ip) in active_video_chat_attendee_processes:
                     processes = active_video_chat_attendee_processes[(
                         name, ip)]
@@ -441,7 +441,7 @@ def process_messages(data):  # Process incoming data
             message = decoded_splitted[3].strip(' ')
 
             subprocess.run(
-                ["notify-send", "New message from " + name + ", Message: " + message])
+                ["notify-send", "New message from " + name + ", Message: " + message, "-t", "1000"])
             # print(str(name) + ": " + str(message))
             if (name, ip) in messages:
                 messages[(name, ip)].append(message)
@@ -453,7 +453,7 @@ def process_messages(data):  # Process incoming data
             for person in online_people:
                 if person[1] == ip:  # Delete the person
                     subprocess.run(
-                        ["notify-send", person[0] + " with ip " + person[1] + " has left the application."])
+                        ["notify-send", person[0] + " with ip " + person[1] + " has left the application.", "-t", "1000"])
                     online_people.remove(person)
         elif message_type == "videochat_leave":
             name = decoded_splitted[0].strip(' ')
@@ -468,7 +468,7 @@ def process_messages(data):  # Process incoming data
                     pass
                 videochat_pids = []
                 subprocess.run(
-                    ["notify-send", name + " with ip " + ip + " has left the video chat."])
+                    ["notify-send", name + " with ip " + ip + " has left the video chat.", "-t", "1000"])
                 print("\n"+ name + " with ip " + ip +
                       " has left the video chat. Press enter to continue...")
 
@@ -535,12 +535,12 @@ def add_new_people(name, ip):  # When a response or announce comes, this is call
                 # Add a new person with new username
                 online_people.add((name, ip))
                 subprocess.run(
-                    ["notify-send", "User with ip " + ip + " changed his name new name is " + name])
+                    ["notify-send", "User with ip " + ip + " changed his name new name is " + name, "-t", "1000"])
 
     # If no one is found with the same ip and the new people is not me, add it to online people
     if not found and (name, ip) != (username, userip):
         subprocess.run(
-            ["notify-send", "New person online: " + name + ", Ip: " + ip])
+            ["notify-send", "New person online: " + name + ", Ip: " + ip, "-t", "1000"])
         online_people.add((name, ip))
 
 

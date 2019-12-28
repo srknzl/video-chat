@@ -1,9 +1,6 @@
 Bugslardan veya todolardan bitenlerin yanına yıldız konacak.
 
 Todos:
-1-
-Bugs: 
-1-notify send bilgisayara göre çalışıyor daha az süre verilebilir 
-* 2- 1-1 de kendi renderı kapatma.
-* 3- Enter or create a group yap.
-* 4- Video chat call yapan adamda başladıktan sonra press enter to continue. 
+-
+Bugs:
+-
