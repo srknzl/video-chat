@@ -28,6 +28,7 @@ class UdpMessageTypes(Enum):
     groupvideochatstart = 3
     groupvideochatleave = 4
     generalleave = 5
+    ongoingvideochats = 6
 
 #! GENERAL UDP FUNCTION
 
@@ -58,6 +59,9 @@ def send_udp_packet(packet_type, groupname=""):  # General udp packet sending fu
         elif packet_type == UdpMessageTypes.generalleave:
             send_general_leave(udp_s)
             send_general_leave(udp_s)
+        elif packet_type == UdpMessageTypes.ongoingvideochats:
+            send_ongoing_videochats_request(udp_s)
+            send_ongoing_videochats_request(udp_s)
         else:
             print("Invalid udp message type", packet_type)
 
@@ -111,6 +115,14 @@ def send_general_leave(s):  # Send to everyone that I am leaving the application
         time.sleep(1)
 
 
+def send_ongoing_videochats_request(s):
+    try:
+        s.sendto(("[" + str(username) + ", " + str(userip) + ", ongoing_videochats]").encode(
+            "utf-8", errors="replace"), ('<broadcast>', 12345))
+    except Exception as e:
+        print("An error occured when requesting ongoing videochats", e)
+        time.sleep(1)
+
 #! TCP SECTION
 
 
@@ -124,6 +136,7 @@ class TcpMessageTypes(Enum):
     mygroups = 7
     responsegroupchatenter = 8
     videochatleave = 9
+    ongoingvideochatsresponse = 10
 
 #! GENERAL TCP FUNCTION
 
@@ -149,6 +162,8 @@ def send_tcp_packet(packet_type, ip=None, payload=None, groups=None, groupname=N
             send_response_videochat_enter_packet(tcp_s, ip, groupname)
         elif packet_type == TcpMessageTypes.videochatleave:
             send_videochat_leave(tcp_s, ip)
+        elif packet_type == TcpMessageTypes.ongoingvideochatsresponse:
+            send_ongoing_videochat_response(tcp_s, ip, groupname)
         else:
             print("Invalid tcp message type", packet_type)
 
@@ -278,6 +293,20 @@ def send_videochat_leave(s, ip):
             "An error occured when sending videochat leave info to someoone", e)
         time.sleep(1)
 
+
+def send_ongoing_videochat_response(s, ip, groupname):
+    try:
+        s.setsockopt(
+            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((ip, 12345))
+        s.sendall(
+            ("[" + str(username) + ", " + str(userip) + ", ongoing_videochat_response, " + groupname + "]").encode("utf-8", errors="replace"))
+        s.shutdown(socket.SHUT_RDWR)
+    except Exception as e:
+        print(
+            "An error occured when sending ongoing videochat info to someoone", e)
+        time.sleep(1)
+
 #! Communication related
 
 
@@ -285,7 +314,7 @@ def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
     print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
-        global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat, active_video_chat_friend_ip, videochat_pids
+        global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat, active_video_chat_friend_ip, videochat_pids, active_video_chat_group
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
         decoded_splitted = decoded_striped.split(",")
         if len(decoded_splitted) < 3:
@@ -305,6 +334,21 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             add_new_people(name, ip)
+        elif message_type == 'ongoing_videochats':
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            if call_started and active_video_chat_group != "":
+                send_tcp_packet(packet_type=TcpMessageTypes.ongoingvideochatsresponse, ip=ip, groupname=active_video_chat_group)
+        elif message_type == 'ongoing_videochat_response':
+            name = decoded_splitted[0].strip(' ')
+            ip = decoded_splitted[1].strip(' ')
+            group = decoded_splitted[3].strip(' ')
+
+            if group in ongoing_group_video_chats:
+                if (name,ip) not in ongoing_group_video_chats[group]:
+                    ongoing_group_video_chats[group].append((name, ip))
+            else:
+                ongoing_group_video_chats[group] = [(name, ip)]
         elif message_type == 'call':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
@@ -354,11 +398,11 @@ def process_messages(data):  # Process incoming data
             # print("groupname", groupname)
             # print("active_video_chat_attendees",active_video_chat_attendees)
             # print("ip",ip, "userip",userip)
-            if groupname not in ongoing_group_video_chats:
-                ongoing_group_video_chats[groupname] = [(name, ip)]
-            else:
-                if (name, ip) not in ongoing_group_video_chats[groupname]:
-                    ongoing_group_video_chats[groupname].append((name, ip))
+            # if groupname not in ongoing_group_video_chats:
+            #     ongoing_group_video_chats[groupname] = [(name, ip)]
+            # else:
+            #     if (name, ip) not in ongoing_group_video_chats[groupname]:
+            #         ongoing_group_video_chats[groupname].append((name, ip))
 
             if call_started and active_video_chat_group == groupname and (name, ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
@@ -371,11 +415,11 @@ def process_messages(data):  # Process incoming data
             groupname = decoded_splitted[3].strip(' ')
             # subprocess.run(["notify-send", name + " leaved the video chat."])
 
-            if groupname in ongoing_group_video_chats:
-                try:
-                    ongoing_group_video_chats[groupname].remove((nama, ip))
-                except ValueError:
-                    pass
+            # if groupname in ongoing_group_video_chats:
+            #     try:
+            #         ongoing_group_video_chats[groupname].remove((nama, ip))
+            #     except ValueError:
+            #         pass
 
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
@@ -397,11 +441,11 @@ def process_messages(data):  # Process incoming data
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
 
-            if groupname not in ongoing_group_video_chats:
-                ongoing_group_video_chats[groupname] = [(name, ip)]
-            else:
-                if (name, ip) not in ongoing_group_video_chats[groupname]:
-                    ongoing_group_video_chats[groupname].append((name, ip))
+            # if groupname not in ongoing_group_video_chats:
+            #     ongoing_group_video_chats[groupname] = [(name, ip)]
+            # else:
+            #     if (name, ip) not in ongoing_group_video_chats[groupname]:
+            #         ongoing_group_video_chats[groupname].append((name, ip))
 
             if active_video_chat_group != "" and call_started and groupname == active_video_chat_group and (name, ip) not in active_video_chat_attendees:
                 active_video_chat_attendees.append((name, ip))
@@ -1160,13 +1204,26 @@ while choice != "q":
             # Render my own video, also stream my video and audio
             launch_group_chat()
         elif choice == "8":
-            for group in ongoing_group_video_chats:
-                flash_messages.append(
-                    "There is a video chat going on in group " + group)
-                flash_messages.append("Attendees: \n")
-                for person in ongoing_group_video_chats[group]:
+            clear()
+            print("Searching...")
+            ongoing_group_video_chats.clear()
+            send_udp_packet(packet_type=UdpMessageTypes.ongoingvideochats)
+            print("3")
+            time.sleep(1)
+            print("2")
+            time.sleep(1)
+            print("1")
+            time.sleep(1)
+            if len(ongoing_group_video_chats) == 0:
+                flash_messages.append("No ongoing video chats found.")
+            else:
+                for group in ongoing_group_video_chats:
                     flash_messages.append(
-                        "Name: " + person[0] + ", Ip: " + person[1])
+                        "There is a video chat going on in group " + group)
+                    flash_messages.append("Attendees: \n")
+                    for person in ongoing_group_video_chats[group]:
+                        flash_messages.append(
+                            "Name: " + person[0] + ", Ip: " + person[1])
         elif choice == "9":  # ! testing purposes
             clear()
             print("------------------Testing------------------ \n\n")
