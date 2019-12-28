@@ -1109,7 +1109,10 @@ while choice != "q":
             send_tcp_packet(packet_type=TcpMessageTypes.acceptcall,
                             ip=will_be_called_person[1])
             print("Please wait..")
-            time.sleep(3)
+            for i in range(10):
+                if start_call_in_three_seconds:
+                    break
+                time.sleep(0.3)
             if start_call_in_three_seconds:
                 print("Video call starting... ")
                 start_video_chat(will_be_called_person[1])
