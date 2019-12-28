@@ -316,7 +316,7 @@ def send_ongoing_videochat_response(s, ip, groupname):
 
 def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
-    # print(decoded)
+    print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
         global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat, active_video_chat_friend_ip, videochat_pids, active_video_chat_group
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
@@ -857,6 +857,7 @@ def get_ip():  # Get my ip in the network, tries to connect to an address via a 
         except:
             IP = '127.0.0.1'
             print("You are not connected to a network chat application will not work.")
+            exit(0)
     return IP
 
 
