@@ -469,7 +469,7 @@ def process_messages(data):  # Process incoming data
                 videochat_pids = ()
                 subprocess.run(
                     ["notify-send", name + " with ip " + ip + " has left the video chat."])
-                print(name + " with ip " + ip +
+                print("\n"+ name + " with ip " + ip +
                       " has left the video chat. Press enter to continue...")
 
         else:
@@ -591,7 +591,7 @@ def start_video_chat(person_ip):  # Start video chat with a person with ip 'pers
 
     videochat_pids = (renderAudioProcessPid, renderVideoProcessPid)
 
-    print("Video chat started...")
+    print("Video chat started, press Enter to continue...")
 
     inp = input("Press c to close video chat")
     while inp != "c":
