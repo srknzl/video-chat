@@ -398,11 +398,6 @@ def process_messages(data):  # Process incoming data
             # print("groupname", groupname)
             # print("active_video_chat_attendees",active_video_chat_attendees)
             # print("ip",ip, "userip",userip)
-            # if groupname not in ongoing_group_video_chats:
-            #     ongoing_group_video_chats[groupname] = [(name, ip)]
-            # else:
-            #     if (name, ip) not in ongoing_group_video_chats[groupname]:
-            #         ongoing_group_video_chats[groupname].append((name, ip))
 
             if call_started and active_video_chat_group == groupname and (name, ip) not in active_video_chat_attendees and ip != userip:
                 active_video_chat_attendees.append((name, ip))
@@ -413,14 +408,7 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
-            # subprocess.run(["notify-send", name + " leaved the video chat."])
-
-            # if groupname in ongoing_group_video_chats:
-            #     try:
-            #         ongoing_group_video_chats[groupname].remove((nama, ip))
-            #     except ValueError:
-            #         pass
-
+            
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
                 subprocess.run(["notify-send", name + " left the video chat."])
@@ -440,12 +428,6 @@ def process_messages(data):  # Process incoming data
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
             groupname = decoded_splitted[3].strip(' ')
-
-            # if groupname not in ongoing_group_video_chats:
-            #     ongoing_group_video_chats[groupname] = [(name, ip)]
-            # else:
-            #     if (name, ip) not in ongoing_group_video_chats[groupname]:
-            #         ongoing_group_video_chats[groupname].append((name, ip))
 
             if active_video_chat_group != "" and call_started and groupname == active_video_chat_group and (name, ip) not in active_video_chat_attendees:
                 active_video_chat_attendees.append((name, ip))
@@ -1219,11 +1201,12 @@ while choice != "q":
             else:
                 for group in ongoing_group_video_chats:
                     flash_messages.append(
-                        "There is a video chat going on in group " + group)
+                        "Video chat in group " + group)
                     flash_messages.append("Attendees: \n")
                     for person in ongoing_group_video_chats[group]:
                         flash_messages.append(
                             "Name: " + person[0] + ", Ip: " + person[1])
+                    flash_messages.append("\n")
         elif choice == "9":  # ! testing purposes
             clear()
             print("------------------Testing------------------ \n\n")
