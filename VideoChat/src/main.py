@@ -411,7 +411,8 @@ def process_messages(data):  # Process incoming data
 
             if active_video_chat_group == groupname and (name, ip) in active_video_chat_attendees:
                 active_video_chat_attendees.remove((name, ip))
-                subprocess.run(["notify-send", name + " left the video chat.", "-t", "1000"])
+                subprocess.run(
+                    ["notify-send", name + " left the video chat.", "-t", "1000"])
                 if (name, ip) in active_video_chat_attendee_processes:
                     processes = active_video_chat_attendee_processes[(
                         name, ip)]
@@ -469,7 +470,7 @@ def process_messages(data):  # Process incoming data
                 videochat_pids = []
                 subprocess.run(
                     ["notify-send", name + " with ip " + ip + " has left the video chat.", "-t", "1000"])
-                print("\n"+ name + " with ip " + ip +
+                print("\n" + name + " with ip " + ip +
                       " has left the video chat. Press enter to continue...")
 
         else:
@@ -546,7 +547,8 @@ def add_new_people(name, ip):  # When a response or announce comes, this is call
 
 #! Video chat related
 
-def start_video_chat(person_ip, in_thread):  # Start video chat with a person with ip 'person_ip'
+# Start video chat with a person with ip 'person_ip'
+def start_video_chat(person_ip, in_thread):
     global call_started, close_video_chat, active_video_chat_friend_ip, videochat_pids
     call_started = True
     active_video_chat_friend_ip = person_ip
@@ -589,12 +591,12 @@ def start_video_chat(person_ip, in_thread):  # Start video chat with a person wi
     outs, errs = renderAudioProcess.communicate()
     renderAudioProcessPid = int(outs.decode())
 
-    videochat_pids = [renderAudioProcessPid, renderVideoProcessPid, renderOwnVideoProcessPid]
+    videochat_pids = [renderAudioProcessPid,
+                      renderVideoProcessPid, renderOwnVideoProcessPid]
 
-    
     if in_thread:
         print("Video chat started, press Enter to continue...")
-    else: 
+    else:
         print("Video chat started...")
 
     inp = input("Press c to close video chat\n")
