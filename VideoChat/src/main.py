@@ -41,26 +41,20 @@ def send_udp_packet(packet_type, groupname=""):  # General udp packet sending fu
         if packet_type == UdpMessageTypes.announce:
             send_announce_packet(udp_s)
             # time.sleep(1)
-            send_announce_packet(udp_s)
             # time.sleep(1)
             # send_announce_packet(udp_s)
         elif packet_type == UdpMessageTypes.allgroupsrequest:
             send_allgroups_req_packet(udp_s)
-            send_allgroups_req_packet(udp_s)
             # send_allgroups_req_packet(udp_s)
         elif packet_type == UdpMessageTypes.groupvideochatstart:
-            send_group_videochat_start_packet(udp_s, groupname)
             send_group_videochat_start_packet(udp_s, groupname)
             # send_group_videochat_start_packet(udp_s, groupname)
         elif packet_type == UdpMessageTypes.groupvideochatleave:
             send_group_videochat_leave_packet(udp_s, groupname)
-            send_group_videochat_leave_packet(udp_s, groupname)
             # send_group_videochat_leave_packet(udp_s, groupname)
         elif packet_type == UdpMessageTypes.generalleave:
             send_general_leave(udp_s)
-            send_general_leave(udp_s)
         elif packet_type == UdpMessageTypes.ongoingvideochats:
-            send_ongoing_videochats_request(udp_s)
             send_ongoing_videochats_request(udp_s)
         else:
             print("Invalid udp message type", packet_type)
@@ -316,7 +310,7 @@ def send_ongoing_videochat_response(s, ip, groupname):
 
 def process_messages(data):  # Process incoming data
     decoded = data.decode("utf-8", errors="replace")
-    print(decoded)
+    # print(decoded)
     if decoded[0] == "[" and decoded[-1] == "]":
         global ongoing_group_video_chats, start_call_in_three_seconds, close_video_chat, active_video_chat_friend_ip, videochat_pids, active_video_chat_group
         decoded_striped = str(decoded[1:-1])  # Strip out square parantheses.
@@ -328,8 +322,8 @@ def process_messages(data):  # Process incoming data
         if message_type == 'announce':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            add_new_people(name, ip)
             if ip != userip:
+                add_new_people(name, ip)
                 executor.submit(send_tcp_packet,
                                 packet_type=TcpMessageTypes.response,
                                 ip=ip
@@ -337,7 +331,8 @@ def process_messages(data):  # Process incoming data
         elif message_type == 'response':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
-            add_new_people(name, ip)
+            if ip != userip:
+                add_new_people(name, ip)
         elif message_type == 'ongoing_videochats':
             name = decoded_splitted[0].strip(' ')
             ip = decoded_splitted[1].strip(' ')
