@@ -236,7 +236,7 @@ def send_cancel_call_packet(s, ip):
         s.connect((ip, 12345))
         s.sendall(
             ("[" + str(username) + ", " + str(userip) + ", cancelcall]").encode("utf-8", errors="replace"))
-        socket.shutdown(socket.SHUT_RDWR)
+        s.shutdown(socket.SHUT_RDWR)
     except Exception as e:
         print("An error occured when sending cancel call message", e)
         time.sleep(1)
