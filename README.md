@@ -11,7 +11,7 @@
 
     * Groups folder holds the currently attended groups. So please do not put a folder called groups in the same folder with main.py in order the application to work properly. 
 
-
+## To run the program run main.py with python3
 ## 1.1. Dependencies
 
 * gstreamer
