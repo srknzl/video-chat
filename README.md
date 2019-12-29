@@ -5,7 +5,7 @@ Video Chat Over Network Using Gstreamer
 ## 1.1. Dependencies
 
 * gstreamer
-* Python 2 (2.6 or later) or Python 3 (3.1 or later)
+* Python 3 (3.5 or later)
 * notify-send
 
 
