@@ -1,5 +1,6 @@
+![Screenshot1](./ss/1.jpeg)
 # Transporter ~ LAN video/group video chat, text chat application
-
+* Use this application with ethernet in order to get good video and audio quality, this application is not intended for wifi. We tried optimizing wifi but due to packet losses we could not achive it.   
 * How to use:
     * You can send message, start 1-1 video chat and attend to group video chats. In order to attend a group video chat you need to enter a group. Groups are stored locally so that when you quit the application your groups do not disappear.
     * In order to create or enter a group press 6 "Manage groups" in the main menu, then press enter 3 "enter/create a group", enter a name that is alphanumeric. That's it. 
