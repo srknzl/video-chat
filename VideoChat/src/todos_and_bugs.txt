@@ -1,6 +1,0 @@
-Bugslardan veya todolardan bitenlerin yanına yıldız konacak.
-
-Todos:
--
-Bugs:
--
