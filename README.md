@@ -1,5 +1,14 @@
-# video-chat
-Video Chat Over Network Using Gstreamer
+# Transporter ~ LAN video/group video chat, text chat application
+
+* How to use:
+    * You can send message, start 1-1 video chat and attend to group video chats. In order to attend a group video chat you need to enter a group. Groups are stored locally so that when you quit the application your groups do not disappear.
+    * In order to create or enter a group press 6 "Manage groups" in the main menu, then press enter 3 "enter/create a group", enter a name that is alphanumeric. That's it. 
+    * You can see all the groups that are created by using all groups option in manage group options.
+    * Once you are in a group you can attend a video chat in that group. 
+
+* Note related to group storage:
+
+    * Groups folder holds the currently attended groups. So please do not put a folder called groups in the same folder with main.py in order the application to work properly. 
 
 
 ## 1.1. Dependencies
@@ -9,17 +18,15 @@ Video Chat Over Network Using Gstreamer
 * notify-send
 
 
-
-# Transporter- LAN video chat, text chat, file transfer application
-
-* Groups folder holds the currently attended groups. So please do not put a folder called groups near main.py. Otherwise, the script  
-
 ## System Requirements
 
-psmisc -> for killall command if you do not have it installed 
-gstreamer -> for streaming video and audio, also for rendering them.
-notify-send -> for visual notification of messages or app related information.
+* psmisc -> for killall command that we use to kill all gstreamer processes occasionally 
+* gstreamer -> for streaming video and audio, also for rendering them.
+* notify-send -> for visual notification of messages or app related information.
 
+
+### Installation 
+You can use our installation script to install all the dependencies at one shot: installation.sh 
 ### gstreamer Installation:
 
 ```
@@ -31,13 +38,16 @@ sudo apt install gstreamer1.0-plugins-*
 ```
 
 ### notify-send Installation
-
+```
 sudo apt-get install libnotify-bin
+```
+### Possible problems related to missing libraries
 
-### Possible problems 
-
-x264enc not found: 
+* x264enc not found: 
+```
 sudo apt-get install gstreamer1.0-plugins-ugly
-
-avdev_h264 no element: 
+```
+* avdev_h264 no element: 
+```
 sudo apt install gstreamer1.0-libav
+```
